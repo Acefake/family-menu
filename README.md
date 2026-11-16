@@ -43,14 +43,11 @@ pnpm build        # 生产包 dist/build/mp-weixin
 pnpm check        # typecheck + eslint + prettier
 ```
 
-> 连接服务空间有两种方式，任选其一：
->
-> 1. **HBuilderX 注入**：关联服务空间后，通过 HBuilderX「运行 → 运行到小程序模拟器」启动。CLI 项目不保证会被注入，没生效就用方式 2。
-> 2. **环境变量（推荐，命令行也能用）**：复制 `.env.example` 为 `.env.local`，填写服务商（支付宝云填 `alipay`）、uniCloud 控制台里的服务空间 ID 和 ClientSecret（服务空间 → 设置），然后 `pnpm dev`，用微信开发者工具导入 `dist/dev/mp-weixin`。`.env.local` 已被 gitignore。
+> 命令行 `pnpm dev` 只编译前端，不会注入 uniCloud 服务空间信息；联调云端请在 HBuilderX 里「运行到小程序模拟器 → 微信开发者工具」。
 
 ### 首次接入 uniCloud（需要你的 DCloud 账号）
 
-1. 在 [uniCloud 控制台](https://unicloud.dcloud.net.cn) 创建**支付宝云**服务空间（HBuilderX 会把本地目录命名为 `uniCloud-alipay`，所以仓库目录也叫这个名字）。
+1. 在 [uniCloud 控制台](https://unicloud.dcloud.net.cn) 创建支付宝云服务空间（可选免费版，注意每月续期）。
 2. 用 HBuilderX 打开本项目根目录，右键 `uniCloud-alipay` → 关联云服务空间。
 3. 复制 `uniCloud-alipay/cloudfunctions/common/fm-common/config.example.json` 为同目录 `config.json`，填写：
    - `weixin.appid` / `weixin.appsecret`：微信公众平台 → 开发管理 → 开发设置
@@ -59,13 +56,12 @@ pnpm check        # typecheck + eslint + prettier
 4. 右键 `common/fm-common` → 上传公共模块；右键 `menu-co` → 管理公共模块依赖确认包含 fm-common → 上传部署。
 5. 右键 `database` → 初始化云数据库（创建 4 张表及索引）。
 6. 在 `src/manifest.json` 的 `mp-weixin.appid` 填入小程序 AppID。
-7. 微信公众平台 → 开发设置 → 服务器域名：按 uniCloud 文档添加服务空间的 request / uploadFile 域名。
+7. 微信公众平台 → 开发设置 → 服务器域名：按 uniCloud 文档添加支付宝云服务空间的 request / uploadFile 域名。
 
 ### 上线前
 
 - 个人主体小程序也需要先完成**小程序备案**再提审。
-- 免费服务空间的额度和续期规则以 uniCloud 控制台为准，到期未续可能被释放。
-- 想改用阿里云：把 `uniCloud-alipay` 目录改名为 `uniCloud-aliyun`，并把 `.env.local` 的服务商改成 `aliyun`，其余代码不用动。
+- 服务空间选免费版的话，记得在到期前续期，否则会被释放。
 
 ## 后续
 

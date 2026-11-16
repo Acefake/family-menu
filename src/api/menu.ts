@@ -1,4 +1,3 @@
-import { getCloud } from '@/api/cloud'
 import type { Category, Dish, DishInput, Family, Meal, ServeInput, Shopping, Slot } from '@/types/models'
 
 /** 云对象 menu-co 的前端类型（实现见 uniCloud-alipay/cloudfunctions/menu-co） */
@@ -34,7 +33,7 @@ let instance: MenuCo | null = null
 /** 懒加载云对象；customUI 让各页面自行处理 loading 和报错 */
 export function menuCo(): MenuCo {
   if (!instance) {
-    instance = getCloud().importObject('menu-co', { customUI: true }) as unknown as MenuCo
+    instance = uniCloud.importObject('menu-co', { customUI: true }) as unknown as MenuCo
   }
   return instance
 }
