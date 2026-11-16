@@ -26,7 +26,9 @@ export function menuCo(): MenuCo {
     // 未关联服务空间时 uniCloud 是占位实现，importObject 返回 undefined
     const obj = uniCloud.importObject('menu-co', { customUI: true }) as unknown as MenuCo | undefined
     if (!obj) {
-      throw new Error('未连接 uniCloud 服务空间：请在 HBuilderX 中关联服务空间，并用「运行到小程序模拟器」启动')
+      throw new Error(
+        '未连接 uniCloud 服务空间：请在 HBuilderX 中关联服务空间，并用「运行到小程序模拟器」启动'
+      )
     }
     instance = obj
   }
