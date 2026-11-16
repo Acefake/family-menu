@@ -40,7 +40,10 @@ pnpm build        # 生产包 dist/build/mp-weixin
 pnpm check        # typecheck + eslint + prettier
 ```
 
-> 命令行 `pnpm dev` 只编译前端，不会注入 uniCloud 服务空间信息；联调云端请在 HBuilderX 里「运行到小程序模拟器 → 微信开发者工具」。
+> 连接服务空间有两种方式，任选其一：
+>
+> 1. **HBuilderX 注入**：关联服务空间后，通过 HBuilderX「运行 → 运行到小程序模拟器」启动。CLI 项目不保证会被注入，没生效就用方式 2。
+> 2. **环境变量（推荐，命令行也能用）**：复制 `.env.example` 为 `.env.local`，填写 uniCloud 控制台里的服务空间 ID 和 ClientSecret（服务空间 → 设置），然后 `pnpm dev`，用微信开发者工具导入 `dist/dev/mp-weixin`。`.env.local` 已被 gitignore。
 
 ### 首次接入 uniCloud（需要你的 DCloud 账号）
 

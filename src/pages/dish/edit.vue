@@ -31,6 +31,7 @@
 import { onLoad } from '@dcloudio/uni-app'
 import { reactive, ref } from 'vue'
 
+import { getCloud } from '@/api/cloud'
 import { errorMessage, menuCo } from '@/api/menu'
 import { CATEGORIES, type DishInput } from '@/types/models'
 
@@ -83,7 +84,7 @@ async function choosePhoto(): Promise<void> {
     const { tempFilePaths } = await uni.chooseImage({ count: 1, sizeType: ['compressed'] })
     const filePath = Array.isArray(tempFilePaths) ? tempFilePaths[0] : tempFilePaths
     uploading.value = true
-    const res = await uniCloud.uploadFile({ filePath, cloudPath: `dish/${Date.now()}.jpg` })
+    const res = await getCloud().uploadFile({ filePath, cloudPath: `dish/${Date.now()}.jpg` })
     form.photo = res.fileID
   } catch (err) {
     if (!String(errorMessage(err)).includes('cancel')) {
