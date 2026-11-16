@@ -1,61 +1,71 @@
 <template>
-  <view class="page">
+  <view class="dishes with-tabbar">
     <view class="head">
       <view>
-        <view class="page-title">菜谱</view>
-        <view class="muted">共 {{ dishes.length }} 道 · 常吃的在前</view>
+        <view class="head-date">{{ dishes.length }} 道 · 做得多的在前</view>
+        <view class="head-title">我家菜谱</view>
       </view>
-      <wd-button icon="add" @click="addDish">添加</wd-button>
+      <view class="add" @click="addDish">＋ 新菜</view>
     </view>
 
     <NoFamily v-if="noFamily" />
     <StateView v-else :loading="loading" :error="error" @retry="reload">
-      <view v-if="!dishes.length" class="state">还没有菜，先添加几道家里的拿手菜</view>
-      <view v-for="g in groups" :key="g.value" class="group">
-        <view class="muted group-title">{{ g.label }} · {{ g.items.length }}</view>
-        <view class="card">
-          <view v-for="d in g.items" :key="d._id" class="row" @click="openDish(d._id)">
-            <DishThumb :name="d.name" :photo="d.photo" :size="48" />
-            <view class="row-main">
-              <text class="row-name">{{ d.name }}</text>
-              <text class="muted"
-                >吃过 {{ d.timesEaten }} 次{{ d.lastEatenAt ? ` · ${ago(d.lastEatenAt)}` : '' }}</text
-              >
+      <DishBrowser :dishes="dishes" :categories="categories" @open="openDish" @manage="goCategories">
+        <template #empty>
+          <EmptyState
+            art="bowl"
+            title="把爱吃的，放进我家菜谱"
+            desc="可以先导入一批家常菜，再慢慢添自己的拿手菜"
+          >
+            <view class="actions">
+              <view :class="['btn', { disabled: importing }]" @click="importHomeDishes">导入家常菜</view>
+              <view class="btn plain" @click="addDish">添加拿手菜</view>
             </view>
-            <text class="muted">›</text>
-          </view>
-        </view>
-      </view>
+          </EmptyState>
+        </template>
+      </DishBrowser>
     </StateView>
   </view>
 </template>
 
 <script setup lang="ts">
+import { storeToRefs } from 'pinia'
 import { computed, ref } from 'vue'
 
-import { menuCo } from '@/api/menu'
-import DishThumb from '@/components/DishThumb.vue'
+import { errorMessage, menuCo } from '@/api/menu'
+import DishBrowser from '@/components/DishBrowser.vue'
+import EmptyState from '@/components/EmptyState.vue'
 import NoFamily from '@/components/NoFamily.vue'
 import StateView from '@/components/StateView.vue'
 import { usePageData } from '@/composables/use-page-data'
-import { CATEGORIES, type Dish } from '@/types/models'
+import { useTabBar } from '@/composables/use-tab-bar'
+import { useSessionStore } from '@/stores/session'
+import type { Dish } from '@/types/models'
 
+useTabBar(1)
+
+const { family } = storeToRefs(useSessionStore())
 const dishes = ref<Dish[]>([])
+const importing = ref(false)
 
-const groups = computed(() =>
-  CATEGORIES.map((c) => ({
-    ...c,
-    items: dishes.value.filter((d) => d.category === c.value).sort((a, b) => b.timesEaten - a.timesEaten),
-  })).filter((g) => g.items.length)
-)
+const categories = computed(() => family.value?.categories ?? [])
 
 const { loading, error, noFamily, reload } = usePageData(async () => {
   dishes.value = await menuCo().listDishes()
 })
 
-function ago(ts: number): string {
-  const days = Math.floor((Date.now() - ts) / 86_400_000)
-  return days <= 0 ? '今天' : `${days} 天前`
+async function importHomeDishes(): Promise<void> {
+  if (importing.value) return
+  importing.value = true
+  try {
+    const added = await menuCo().importHomeDishes()
+    uni.showToast({ title: added ? `已导入 ${added} 道菜` : '家常菜已在菜谱中', icon: 'none' })
+  } catch (err) {
+    uni.showToast({ title: errorMessage(err), icon: 'none' })
+  } finally {
+    await reload()
+    importing.value = false
+  }
 }
 
 function openDish(id: string): void {
@@ -65,43 +75,57 @@ function openDish(id: string): void {
 function addDish(): void {
   uni.navigateTo({ url: '/pages/dish/edit' })
 }
+
+function goCategories(): void {
+  uni.navigateTo({ url: '/pages/categories/index' })
+}
 </script>
 
 <style lang="scss" scoped>
+.dishes {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--c-surface);
+}
+
 .head {
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
+  padding: var(--space-4);
+  color: #fff;
+  /* 顶边的颜色必须和导航栏（pages.json 里的 #4a6b7f）一致，往下再变深，否则会看见一条接缝 */
+  background: linear-gradient(180deg, #4a6b7f 0%, #304d60 65%, #263f4f 100%);
 }
 
-.group {
-  margin-bottom: var(--space-5);
+.head-date {
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 13px;
 }
 
-.group-title {
-  margin-bottom: var(--space-2);
+.head-title {
+  font-family: var(--font-serif);
+  font-size: 22px;
+  font-weight: 700;
 }
 
-.row {
+.add {
+  padding: 6px 14px;
+  font-size: 14px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius-pill);
+}
+
+.empty-title {
+  font-family: var(--font-serif);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.actions {
   display: flex;
-  align-items: center;
   gap: var(--space-3);
-  padding: var(--space-3) var(--space-4);
-
-  & + & {
-    border-top: 1px solid var(--c-line);
-  }
-}
-
-.row-main {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.row-name {
-  font-size: 16px;
-  font-weight: 500;
+  margin-top: var(--space-4);
 }
 </style>

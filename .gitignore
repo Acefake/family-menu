@@ -13,4 +13,4 @@ unpackage
 .hbuilderx
 
 # 云函数密钥配置（复制 config.example.json 后填写）
-uniCloud-aliyun/cloudfunctions/common/fm-common/config.json
+uniCloud-alipay/cloudfunctions/common/fm-common/config.json

@@ -5,7 +5,7 @@ import globals from 'globals'
 import tseslint from 'typescript-eslint'
 
 export default tseslint.config(
-  { ignores: ['dist/**', 'node_modules/**', 'unpackage/**'] },
+  { ignores: ['dist/**', 'node_modules/**', 'unpackage/**', 'src/custom-tab-bar/**'] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   ...vue.configs['flat/recommended'],
@@ -24,7 +24,7 @@ export default tseslint.config(
   },
   {
     // 云函数是 CommonJS，运行在 uniCloud（Node）里
-    files: ['uniCloud-aliyun/**/*.js'],
+    files: ['uniCloud-aliyun/**/*.js', 'uniCloud-alipay/**/*.js'],
     languageOptions: {
       sourceType: 'commonjs',
       globals: { ...globals.node, uniCloud: 'readonly' },

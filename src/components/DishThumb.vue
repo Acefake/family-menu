@@ -1,12 +1,14 @@
 <template>
   <view class="thumb" :style="{ width: sizePx, height: sizePx, background: tint }">
-    <image v-if="photo" class="thumb-img" :src="photo" mode="aspectFill" />
-    <text v-else class="thumb-text">{{ name.slice(0, 1) }}</text>
+    <image v-if="photoUrl" class="thumb-img" :src="photoUrl" mode="aspectFill" />
+    <text v-if="!photoUrl" class="thumb-text">{{ name.slice(0, 1) }}</text>
   </view>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
+
+import { usePhotoUrl } from '@/utils/photo'
 
 const props = withDefaults(defineProps<{ name: string; photo?: string; size?: number }>(), {
   photo: '',
@@ -15,6 +17,7 @@ const props = withDefaults(defineProps<{ name: string; photo?: string; size?: nu
 
 const TINTS = ['#F6D9C8', '#F3E1B8', '#D9E8CF', '#E8DCCF', '#F2CFC4', '#F5E6C4']
 
+const photoUrl = usePhotoUrl(() => props.photo)
 const sizePx = computed(() => `${props.size}px`)
 
 /** 没有照片时按菜名取一个固定的暖色底 */

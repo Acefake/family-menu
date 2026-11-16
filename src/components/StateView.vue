@@ -8,6 +8,9 @@
 </template>
 
 <script setup lang="ts">
+// 小程序里组件外会多一层自定义元素，不去掉的话根节点的 flex: 1 撑不开高度
+defineOptions({ options: { virtualHost: true } })
+
 defineProps<{ loading: boolean; error: string }>()
 
 const emit = defineEmits<{ retry: [] }>()

@@ -1,21 +1,31 @@
-import type { Dish, DishInput, Family, Meal, Menu, ShoppingItem } from '@/types/models'
+import type { Category, Dish, DishInput, Family, Meal, ServeInput, Shopping, Slot } from '@/types/models'
 
-/** 云对象 menu-co 的前端类型（实现见 uniCloud-aliyun/cloudfunctions/menu-co） */
+/** 云对象 menu-co 的前端类型（实现见 uniCloud-alipay/cloudfunctions/menu-co） */
 interface MenuCo {
   login(code: string, nickname?: string): Promise<{ token: string; tokenExpired: number; uid: string }>
   getFamily(): Promise<Family | null>
   createFamily(name: string): Promise<Family>
   joinFamily(inviteCode: string): Promise<Family>
+  saveCategories(list: { id?: string; name: string }[]): Promise<Category[]>
+  leaveFamily(): Promise<void>
+  previewInvite(inviteCode: string): Promise<{ name: string; memberCount: number } | null>
   setNickname(nickname: string): Promise<Family>
   listDishes(): Promise<Dish[]>
+  importHomeDishes(): Promise<number>
   getDish(id: string): Promise<Dish>
   saveDish(dish: DishInput): Promise<string>
   removeDish(id: string): Promise<void>
-  getMenu(date: string, meal: Meal): Promise<Menu>
-  toggleOrder(date: string, meal: Meal, dishId: string): Promise<Menu>
-  setDone(date: string, meal: Meal, dishId: string, done: boolean): Promise<Menu>
-  getShopping(date: string, meal: Meal): Promise<ShoppingItem[]>
-  setBought(date: string, meal: Meal, name: string, bought: boolean): Promise<void>
+  getSlot(date: string, meal: Meal): Promise<Slot>
+  listSlots(from: string, to: string): Promise<Slot[]>
+  submitSelection(date: string, meal: Meal, dishIds: string[], note?: string): Promise<Slot>
+  removeFromSlot(date: string, meal: Meal, dishId: string): Promise<Slot>
+  confirmSlot(date: string, meal: Meal): Promise<Slot>
+  reopenSlot(date: string, meal: Meal): Promise<Slot>
+  serveSlot(date: string, meal: Meal, input: ServeInput): Promise<void>
+  listServed(month: string): Promise<Slot[]>
+  getShopping(from: string, to: string): Promise<Shopping>
+  setBought(from: string, to: string, name: string, bought: boolean): Promise<void>
+  setPantry(name: string, have: boolean): Promise<void>
 }
 
 let instance: MenuCo | null = null

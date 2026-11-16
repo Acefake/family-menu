@@ -1,19 +1,38 @@
-/* 设计稿 tokens：暖白底 + 番茄红强调色（见 README 的设计稿链接） */
+/* 设计 tokens：冷灰蓝墨色 + 纸白底；菜名、标题用衬线体。风格参考食愿小灶（只借鉴配色和版式，素材自绘） */
 page {
-  --c-bg: #fbf7f2;
+  height: 100%;
+  --c-bg: #f5f7f8;
   --c-surface: #ffffff;
-  --c-muted-bg: #f1e9df;
-  --c-line: #efe6dc;
-  --c-line-strong: #e5dcd2;
-  --c-text: #2b2420;
-  --c-text-2: #6e625a;
-  --c-accent: #c8431b;
-  --c-accent-soft: #fbe6dc;
-  --c-done: #3d7a4c;
+  --c-muted-bg: #edf2f4;
+  --c-line: #e6ebeb;
+  --c-line-strong: #c7d2d7;
+  --c-text: #24363f;
+  --c-text-2: #69777a;
+  --c-accent: #304d60;
+  --c-accent-soft: #edf2f4;
+  --c-done: #4f7565;
+  --c-done-soft: #edf4f0;
+  --c-warn: #8c6b39;
+  --c-warn-soft: #faf5e9;
+  --c-danger: #9a5145;
+  --c-danger-soft: #faf0ed;
+  --c-badge: #e02e2e;
 
-  --radius-sm: 12px;
-  --radius-md: 16px;
-  --radius-lg: 20px;
+  /* 分类标签：每类一组固定的墨色 + 底色 */
+  --tag-meat-ink: #735c80;
+  --tag-meat-bg: #f3eff6;
+  --tag-veg-ink: #38654e;
+  --tag-veg-bg: #e9f5ec;
+  --tag-soup-ink: #3c607c;
+  --tag-soup-bg: #eaf3fc;
+  --tag-staple-ink: #87512b;
+  --tag-staple-bg: #fff0df;
+  --tag-other-ink: #69777a;
+  --tag-other-bg: #edf2f4;
+
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
   --radius-pill: 999px;
 
   --space-1: 4px;
@@ -23,7 +42,7 @@ page {
   --space-5: 20px;
   --space-6: 24px;
 
-  --font-serif: 'Noto Serif SC', 'Songti SC', serif;
+  --font-serif: 'Songti SC', 'STSong', 'Noto Serif SC', serif;
 
   /* wot-design-uni 主题色 */
   --wot-color-theme: var(--c-accent);
@@ -31,21 +50,22 @@ page {
   background: var(--c-bg);
   color: var(--c-text);
   font-size: 15px;
-  font-family: -apple-system, 'PingFang SC', 'Noto Sans SC', sans-serif;
+  line-height: 1.6;
+  font-family: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
 }
 
 .page {
   display: flex;
   flex-direction: column;
-  gap: var(--space-5);
-  padding: var(--space-2) var(--space-5) var(--space-6);
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-4) var(--space-6);
 }
 
 .page-title {
   font-family: var(--font-serif);
-  font-size: 30px;
+  font-size: 22px;
   font-weight: 700;
-  line-height: 1.2;
+  line-height: 1.3;
 }
 
 .muted {
@@ -55,11 +75,212 @@ page {
 
 .card {
   background: var(--c-surface);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
 }
 
 .state {
   padding: 48px 0;
   color: var(--c-text-2);
   text-align: center;
+}
+
+/* 顶部大标题区：一块带渐变的纸面，页面的主标题和切换控件叠在上面 */
+.hero {
+  position: relative;
+  padding: var(--space-5) var(--space-4) calc(var(--space-6) + 16px);
+  color: #fff;
+  /* 顶边的颜色必须和导航栏（pages.json 里的 #4a6b7f）一致，往下再变深，否则会看见一条接缝 */
+  background: linear-gradient(180deg, #4a6b7f 0%, #304d60 65%, #263f4f 100%);
+}
+
+.hero-date {
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 13px;
+}
+
+.hero-title {
+  margin-top: var(--space-1);
+  font-family: var(--font-serif);
+  font-size: 24px;
+  font-weight: 700;
+}
+
+/* 抬起来盖住 hero 底部的白色面板 */
+.sheet {
+  position: relative;
+  margin-top: -16px;
+  padding: var(--space-4);
+  background: var(--c-surface);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  min-height: 60vh;
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 var(--space-2);
+  font-size: 12px;
+  line-height: 20px;
+  border-radius: var(--radius-sm);
+  color: var(--tag-other-ink);
+  background: var(--tag-other-bg);
+
+  &.meat {
+    color: var(--tag-meat-ink);
+    background: var(--tag-meat-bg);
+  }
+
+  &.veg {
+    color: var(--tag-veg-ink);
+    background: var(--tag-veg-bg);
+  }
+
+  &.soup {
+    color: var(--tag-soup-ink);
+    background: var(--tag-soup-bg);
+  }
+
+  &.staple {
+    color: var(--tag-staple-ink);
+    background: var(--tag-staple-bg);
+  }
+
+  &.done {
+    color: var(--c-done);
+    background: var(--c-done-soft);
+  }
+
+  &.warn {
+    color: var(--c-warn);
+    background: var(--c-warn-soft);
+  }
+}
+
+/* 深色主按钮、描边次按钮、圆形加号 */
+.btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 var(--space-5);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  background: var(--c-accent);
+  border-radius: var(--radius-md);
+
+  &:active {
+    opacity: 0.85;
+  }
+
+  &.plain {
+    color: var(--c-text);
+    background: var(--c-surface);
+    border: 1px solid var(--c-line-strong);
+  }
+
+  &.disabled {
+    opacity: 0.45;
+  }
+}
+
+/* 圆形加号 / 已选对勾：图形全用 CSS 画，不依赖字体，居中和粗细在各机型一致 */
+.round-btn {
+  position: relative;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  color: #fff;
+  background: var(--c-accent);
+  border: 1px solid var(--c-accent);
+  border-radius: 50%;
+  transition:
+    background-color 0.2s,
+    color 0.2s;
+
+  &::before,
+  &::after {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    background: currentcolor;
+    border-radius: 1px;
+    content: '';
+    transition:
+      transform 0.22s cubic-bezier(0.22, 1, 0.36, 1),
+      opacity 0.15s;
+  }
+
+  &::before {
+    width: 14px;
+    height: 2px;
+    margin: -1px 0 0 -7px;
+  }
+
+  &::after {
+    width: 2px;
+    height: 14px;
+    margin: -7px 0 0 -1px;
+  }
+
+  &.on {
+    color: var(--c-accent);
+    background: var(--c-accent-soft);
+
+    &::before {
+      opacity: 0;
+      transform: scale(0.4);
+    }
+
+    /* 竖条转成对勾的长边 */
+    &::after {
+      width: 6px;
+      height: 11px;
+      margin: -8px 0 0 -3px;
+      background: none;
+      border-right: 2px solid currentcolor;
+      border-bottom: 2px solid currentcolor;
+      border-radius: 0;
+      transform: rotate(45deg);
+    }
+  }
+
+  &:active {
+    opacity: 0.8;
+  }
+}
+
+/* 底部固定操作条 */
+.bar {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  padding: var(--space-3) var(--space-4) calc(var(--space-3) + env(safe-area-inset-bottom));
+  background: var(--c-surface);
+  border-top: 1px solid var(--c-line);
+
+  /* tab 页里要让出悬浮 tab 栏 */
+  &.above-tabbar {
+    bottom: calc(86px + env(safe-area-inset-bottom) * 0.3);
+    padding-bottom: var(--space-3);
+  }
+}
+
+.hairline {
+  border-bottom: 1px solid var(--c-line);
+
+  &:last-child {
+    border-bottom: 0;
+  }
+}
+
+/* 自定义悬浮 tab 栏不占位，tab 页根节点留出它的高度 */
+.with-tabbar {
+  box-sizing: border-box;
+  background: var(--c-surface);
+  padding-bottom: calc(86px + env(safe-area-inset-bottom) * 0.3);
 }

@@ -1,7 +1,7 @@
 <template>
   <StateView :loading="loading" :error="error" @retry="load">
     <view v-if="dish" class="detail">
-      <DishThumb class="hero" :name="dish.name" :photo="dish.photo" :size="390" />
+      <DishThumb class="dish-photo" :name="dish.name" :photo="dish.photo" :size="390" />
       <view class="page body">
         <view>
           <view class="page-title">{{ dish.name }}</view>
@@ -32,8 +32,10 @@
       </view>
 
       <view class="bar">
-        <wd-button plain icon="edit" @click="edit" />
-        <wd-button block custom-style="flex: 1" @click="addToMenu">加入{{ mealName }}菜单</wd-button>
+        <view class="btn plain" @click="edit">编辑</view>
+        <view :class="['btn grow', { disabled: adding }]" @click="addToMenu">{{
+          added ? '已在我点的菜里' : `加入${relativeDay(date)}${mealName}`
+        }}</view>
       </view>
     </view>
   </StateView>
@@ -49,8 +51,11 @@ import DishThumb from '@/components/DishThumb.vue'
 import StateView from '@/components/StateView.vue'
 import { useSessionStore } from '@/stores/session'
 import { type Dish, MEALS } from '@/types/models'
+import { relativeDay } from '@/utils/date'
 
-const { date, meal } = storeToRefs(useSessionStore())
+const { date, meal, uid } = storeToRefs(useSessionStore())
+const added = ref(false)
+const adding = ref(false)
 const id = ref('')
 const dish = ref<Dish | null>(null)
 const loading = ref(true)
@@ -74,14 +79,21 @@ onLoad((query) => {
 onShow(load)
 
 async function addToMenu(): Promise<void> {
+  if (adding.value || added.value) return
+  adding.value = true
   try {
-    const menu = await menuCo().getMenu(date.value, meal.value)
-    if (!menu.items.some((it) => it.dishId === id.value)) {
-      await menuCo().toggleOrder(date.value, meal.value, id.value)
+    const slot = await menuCo().getSlot(date.value, meal.value)
+    const mine = slot.selections.find((sel) => sel.uid === uid.value)
+    const ids = mine?.dishIds ?? []
+    if (!ids.includes(id.value)) {
+      await menuCo().submitSelection(date.value, meal.value, [...ids, id.value], mine?.note)
     }
+    added.value = true
     uni.showToast({ title: '已加入', icon: 'success' })
   } catch (err) {
     uni.showToast({ title: errorMessage(err), icon: 'none' })
+  } finally {
+    adding.value = false
   }
 }
 
@@ -91,7 +103,7 @@ function edit(): void {
 </script>
 
 <style lang="scss" scoped>
-.hero {
+.dish-photo {
   width: 100% !important;
   height: 280px !important;
   border-radius: 0 !important;
@@ -110,15 +122,21 @@ function edit(): void {
 
 .tag {
   padding: 2px 10px;
-  background: var(--c-surface);
-  border-radius: var(--radius-pill);
   font-size: 13px;
+  color: var(--c-text-2);
+  background: var(--c-muted-bg);
+  border-radius: var(--radius-pill);
 }
 
 .section-title {
   margin-bottom: var(--space-2);
+  font-family: var(--font-serif);
   font-size: 17px;
   font-weight: 700;
+}
+
+.grow {
+  flex: 1;
 }
 
 .ingredients {

@@ -23,11 +23,15 @@
     },
     "photo": {
       "bsonType": "string",
-      "description": "照片 fileID"
+      "description": "云存储 fileID 或内置菜品图片路径"
+    },
+    "homeTemplate": {
+      "bsonType": "bool",
+      "description": "是否由家常菜模板导入"
     },
     "category": {
       "bsonType": "string",
-      "enum": ["meat", "veg", "soup", "staple", "other"]
+      "description": "所属分类 ID，对应 fm-family.categories"
     },
     "tags": {
       "bsonType": "array",

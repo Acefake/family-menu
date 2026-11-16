@@ -1,22 +1,22 @@
 {
-  "name": "家庭菜单",
-  "appid": "",
-  "description": "一家人一起点菜、买菜",
-  "versionName": "1.0.0",
-  "versionCode": "100",
-  "transformPx": false,
-  "mp-weixin": {
-    "appid": "",
-    "setting": {
-      "urlCheck": false,
-      "es6": true,
-      "minified": true
+    "name" : "家庭菜单",
+    "appid" : "__UNI__88D43AE",
+    "description" : "一家人一起点菜、买菜",
+    "versionName" : "1.0.0",
+    "versionCode" : "100",
+    "transformPx" : false,
+    "mp-weixin" : {
+        "appid" : "wx0d2d6eb6f4520437",
+        "setting" : {
+            "urlCheck" : false,
+            "es6" : true,
+            "minified" : true
+        },
+        "usingComponents" : true,
+        "lazyCodeLoading" : "requiredComponents"
     },
-    "usingComponents": true,
-    "lazyCodeLoading": "requiredComponents"
-  },
-  "uniStatistics": {
-    "enable": false
-  },
-  "vueVersion": "3"
+    "uniStatistics" : {
+        "enable" : false
+    },
+    "vueVersion" : "3"
 }

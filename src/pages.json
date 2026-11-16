@@ -6,43 +6,107 @@
     }
   },
   "pages": [
-    { "path": "pages/today/index", "style": { "navigationBarTitleText": "今日菜单" } },
-    { "path": "pages/order/index", "style": { "navigationBarTitleText": "点菜" } },
-    { "path": "pages/dishes/index", "style": { "navigationBarTitleText": "菜谱" } },
-    { "path": "pages/mine/index", "style": { "navigationBarTitleText": "我的" } },
-    { "path": "pages/dish/detail", "style": { "navigationBarTitleText": "菜品" } },
-    { "path": "pages/dish/edit", "style": { "navigationBarTitleText": "编辑菜品" } },
-    { "path": "pages/shopping/index", "style": { "navigationBarTitleText": "采购清单" } }
+    {
+      "path": "pages/today/index",
+      "style": {
+        "navigationBarTitleText": "家庭菜单",
+        "navigationBarBackgroundColor": "#4a6b7f",
+        "navigationBarTextStyle": "white"
+      }
+    },
+    {
+      "path": "pages/dishes/index",
+      "style": {
+        "navigationBarTitleText": "菜谱",
+        "navigationBarBackgroundColor": "#4a6b7f",
+        "navigationBarTextStyle": "white"
+      }
+    },
+    {
+      "path": "pages/shopping/index",
+      "style": {
+        "navigationBarTitleText": "买菜",
+        "navigationBarBackgroundColor": "#4a6b7f",
+        "navigationBarTextStyle": "white"
+      }
+    },
+    {
+      "path": "pages/mine/index",
+      "style": {
+        "navigationBarTitleText": "我的",
+        "navigationBarBackgroundColor": "#4a6b7f",
+        "navigationBarTextStyle": "white"
+      }
+    },
+    {
+      "path": "pages/order/index",
+      "style": {
+        "navigationBarTitleText": "点菜",
+        "navigationBarBackgroundColor": "#4a6b7f",
+        "navigationBarTextStyle": "white"
+      }
+    },
+    {
+      "path": "pages/categories/index",
+      "style": {
+        "navigationBarTitleText": "编辑分类"
+      }
+    },
+    {
+      "path": "pages/serve/index",
+      "style": {
+        "navigationBarTitleText": "记下这餐"
+      }
+    },
+    {
+      "path": "pages/diary/index",
+      "style": {
+        "navigationBarTitleText": "饮食日记"
+      }
+    },
+    {
+      "path": "pages/dish/detail",
+      "style": {
+        "navigationBarTitleText": "菜品"
+      }
+    },
+    {
+      "path": "pages/dish/edit",
+      "style": {
+        "navigationBarTitleText": "编辑菜品"
+      }
+    }
   ],
   "globalStyle": {
     "navigationBarTextStyle": "black",
     "navigationBarTitleText": "家庭菜单",
-    "navigationBarBackgroundColor": "#FBF7F2",
-    "backgroundColor": "#FBF7F2"
+    "navigationBarBackgroundColor": "#F5F7F8",
+    "backgroundColor": "#F5F7F8"
   },
   "tabBar": {
-    "color": "#6E625A",
-    "selectedColor": "#C8431B",
+    "custom": true,
+    "color": "#69777A",
+    "selectedColor": "#304D60",
     "backgroundColor": "#FFFFFF",
     "borderStyle": "white",
     "list": [
       {
         "pagePath": "pages/today/index",
-        "text": "今日",
+        "text": "这顿",
         "iconPath": "static/tabbar/today.png",
         "selectedIconPath": "static/tabbar/today-active.png"
-      },
-      {
-        "pagePath": "pages/order/index",
-        "text": "点菜",
-        "iconPath": "static/tabbar/order.png",
-        "selectedIconPath": "static/tabbar/order-active.png"
       },
       {
         "pagePath": "pages/dishes/index",
         "text": "菜谱",
         "iconPath": "static/tabbar/dishes.png",
         "selectedIconPath": "static/tabbar/dishes-active.png"
+      },
+      {
+        "pagePath": "pages/shopping/index",
+        "text": "买菜",
+        "iconPath": "static/tabbar/shopping.png",
+        "selectedIconPath": "static/tabbar/shopping-active.png"
       },
       {
         "pagePath": "pages/mine/index",

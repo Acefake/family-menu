@@ -1,0 +1,69 @@
+{
+  "bsonType": "object",
+  "description": "某天某一顿的菜单：每位家人各自点想吃的菜，合成一张单（客户端无权限，只经由云对象 menu-co 访问）",
+  "required": ["familyId", "date", "meal", "status"],
+  "permission": {
+    "read": false,
+    "create": false,
+    "update": false,
+    "delete": false
+  },
+  "properties": {
+    "_id": {
+      "description": "ID，系统自动生成"
+    },
+    "familyId": {
+      "bsonType": "string",
+      "description": "所属家庭"
+    },
+    "date": {
+      "bsonType": "string",
+      "description": "YYYY-MM-DD"
+    },
+    "meal": {
+      "bsonType": "string",
+      "enum": ["breakfast", "lunch", "dinner"]
+    },
+    "status": {
+      "bsonType": "string",
+      "enum": ["open", "confirmed", "served"],
+      "description": "open 在点菜 / confirmed 掌勺已确认 / served 已开饭"
+    },
+    "selections": {
+      "bsonType": "array",
+      "description": "每位成员点的菜，提交时只替换自己的那条",
+      "items": {
+        "bsonType": "object",
+        "properties": {
+          "uid": { "bsonType": "string", "description": "点菜人 uid" },
+          "name": { "bsonType": "string", "description": "点菜人称呼快照" },
+          "dishIds": { "bsonType": "array", "description": "想吃的菜 ID" },
+          "note": { "bsonType": "string", "maxLength": 40, "description": "口味备注" }
+        }
+      }
+    },
+    "confirmedBy": {
+      "bsonType": "string",
+      "description": "确认的人（称呼）"
+    },
+    "bought": {
+      "bsonType": "object",
+      "description": "买菜清单勾选状态，key 为食材名"
+    },
+    "cooked": {
+      "bsonType": "array",
+      "description": "开饭时勾出的、真正做了的菜 ID"
+    },
+    "ratings": {
+      "bsonType": "object",
+      "description": "开饭时给每道菜的评分，key 为菜 ID，1-5"
+    },
+    "photo": {
+      "bsonType": "string",
+      "description": "开饭时拍的整桌照"
+    },
+    "servedAt": {
+      "bsonType": "timestamp"
+    }
+  }
+}

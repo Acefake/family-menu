@@ -29,6 +29,26 @@
     "createdAt": {
       "bsonType": "timestamp",
       "description": "创建时间"
+    },
+    "pantry": {
+      "bsonType": "array",
+      "description": "家里有的食材，买菜清单里不再提醒"
+    },
+    "categories": {
+      "bsonType": "array",
+      "description": "菜品分类（顺序即显示顺序），每项 { id, name }；没设置时用默认五类",
+      "items": {
+        "bsonType": "object",
+        "properties": {
+          "id": {
+            "bsonType": "string"
+          },
+          "name": {
+            "bsonType": "string",
+            "maxLength": 6
+          }
+        }
+      }
     }
   }
 }

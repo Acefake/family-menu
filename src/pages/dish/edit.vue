@@ -1,13 +1,14 @@
 <template>
   <view class="page">
     <view class="photo" @click="choosePhoto">
-      <image v-if="form.photo" class="photo-img" :src="form.photo" mode="aspectFill" />
-      <text v-else class="muted">{{ uploading ? '上传中…' : '点击添加照片' }}</text>
+      <image v-if="photoUrl" class="photo-img" :src="photoUrl" mode="aspectFill" />
+      <text v-if="!photoUrl" class="muted">{{ uploading ? '上传中…' : '点击添加照片' }}</text>
     </view>
 
     <wd-cell-group border>
       <wd-input v-model="form.name" label="菜名" placeholder="比如：可乐鸡翅" clearable />
       <wd-picker v-model="form.category" label="分类" :columns="categoryColumns" />
+      <view class="manage" @click="goCategories">管理分类</view>
       <wd-input v-model="minutesText" label="用时" type="number" placeholder="分钟" />
       <wd-input v-model="tagsText" label="标签" placeholder="用空格分隔，如：甜口 快手菜" />
     </wd-cell-group>
@@ -29,21 +30,28 @@
 
 <script setup lang="ts">
 import { onLoad } from '@dcloudio/uni-app'
-import { reactive, ref } from 'vue'
+import { storeToRefs } from 'pinia'
+import { computed, reactive, ref } from 'vue'
 
 import { errorMessage, menuCo } from '@/api/menu'
-import { CATEGORIES, type DishInput } from '@/types/models'
+import { useSessionStore } from '@/stores/session'
+import type { DishInput } from '@/types/models'
+import { usePhotoUrl } from '@/utils/photo'
 
-const categoryColumns = CATEGORIES.map((c) => ({ value: c.value, label: c.label }))
+const { family } = storeToRefs(useSessionStore())
+const categoryColumns = computed(() =>
+  (family.value?.categories ?? []).map((c) => ({ value: c.id, label: c.name }))
+)
 
 const form = reactive<DishInput>({
   name: '',
   photo: '',
-  category: 'meat',
+  category: family.value?.categories[0]?.id ?? 'other',
   tags: [],
   ingredients: [],
   steps: [],
 })
+const photoUrl = usePhotoUrl(() => form.photo ?? '')
 const minutesText = ref('')
 const tagsText = ref('')
 const ingredientsText = ref('')
@@ -76,6 +84,10 @@ function lines(text: string): string[] {
     .split('\n')
     .map((l) => l.trim())
     .filter(Boolean)
+}
+
+function goCategories(): void {
+  uni.navigateTo({ url: '/pages/categories/index' })
 }
 
 async function choosePhoto(): Promise<void> {
@@ -154,5 +166,13 @@ async function remove(): Promise<void> {
 .label {
   margin-bottom: var(--space-2);
   font-weight: 500;
+}
+
+.manage {
+  padding: var(--space-2) var(--space-4);
+  color: var(--c-accent);
+  font-size: 13px;
+  text-align: right;
+  background: var(--c-surface);
 }
 </style>

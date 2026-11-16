@@ -1,0 +1,15 @@
+<view class="dock">
+  <view class="pill">
+    <view
+      wx:for="{{list}}"
+      wx:key="path"
+      class="item {{selected === index ? 'on' : ''}}"
+      data-index="{{index}}"
+      bindtap="onTap"
+    >
+      <image class="icon" src="{{selected === index ? item.activeIcon : item.icon}}" mode="aspectFit" />
+      <text wx:if="{{badges[index]}}" class="badge">{{badges[index]}}</text>
+      <text class="label">{{item.text}}</text>
+    </view>
+  </view>
+</view>

@@ -7,6 +7,7 @@ import { currentMeal, today } from '@/utils/date'
 
 const TOKEN_KEY = 'uni_id_token'
 const TOKEN_EXPIRED_KEY = 'uni_id_token_expired'
+const UID_KEY = 'fm_uid'
 
 /** 登录态、当前家庭和正在看的那一顿 */
 export const useSessionStore = defineStore('session', () => {
@@ -18,12 +19,17 @@ export const useSessionStore = defineStore('session', () => {
 
   async function login(): Promise<void> {
     const expired = Number(uni.getStorageSync(TOKEN_EXPIRED_KEY) || 0)
-    if (uni.getStorageSync(TOKEN_KEY) && expired > Date.now()) return
+    const cachedUid = String(uni.getStorageSync(UID_KEY) || '')
+    if (uni.getStorageSync(TOKEN_KEY) && cachedUid && expired > Date.now()) {
+      uid.value = cachedUid
+      return
+    }
     const { code } = await uni.login({ provider: 'weixin' })
     const res = await menuCo().login(code)
     // uniCloud 客户端会自动把 uni_id_token 带给云对象
     uni.setStorageSync(TOKEN_KEY, res.token)
     uni.setStorageSync(TOKEN_EXPIRED_KEY, res.tokenExpired)
+    uni.setStorageSync(UID_KEY, res.uid)
     uid.value = res.uid
   }
 

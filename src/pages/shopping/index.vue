@@ -1,100 +1,289 @@
 <template>
-  <view class="page">
-    <view class="head">
-      <view>
-        <view class="page-title">采购清单</view>
-        <view class="muted">已买 {{ boughtCount }}/{{ items.length }}</view>
-      </view>
-      <wd-button plain size="small" open-type="share">发给家人</wd-button>
-    </view>
-    <wd-progress :percentage="percent" hide-text />
-
-    <StateView :loading="loading" :error="error" @retry="reload">
-      <view v-if="!items.length" class="state">这顿的菜还没有填食材</view>
-      <view class="card">
-        <view v-for="it in items" :key="it.name" class="row" @click="toggle(it.name, !it.bought)">
-          <wd-checkbox :model-value="it.bought" />
-          <view class="row-main">
-            <text :class="['row-name', { done: it.bought }]">{{ it.name }}</text>
-            <text class="muted">{{ it.fromDishes.join('、') }}</text>
-          </view>
-          <text class="muted">{{ it.qty.join(' + ') }}</text>
+  <view class="with-tabbar">
+    <view class="hero">
+      <view class="hero-date">{{ rangeLabel }}</view>
+      <view class="hero-title">备菜清单</view>
+      <view class="ranges">
+        <view
+          v-for="r in RANGES"
+          :key="r.days"
+          :class="['range', { on: days === r.days }]"
+          @click="pickRange(r.days)"
+        >
+          {{ r.label }}
         </view>
       </view>
-    </StateView>
+    </view>
+
+    <view class="sheet">
+      <NoFamily v-if="noFamily" />
+      <StateView v-else :loading="loading" :error="error" @retry="reload">
+        <EmptyState
+          v-if="!shopping.items.length && !shopping.stocked.length"
+          art="basket"
+          title="这几天还没有要买的"
+          desc="先在「这顿」里点菜，食材会自动合并到这里"
+        />
+
+        <block v-else>
+          <view class="progress">
+            <text>已买 {{ boughtCount }}/{{ shopping.items.length }}</text>
+            <view class="bar-track"><view class="bar-fill" :style="{ width: `${percent}%` }" /></view>
+          </view>
+
+          <view v-for="it in shopping.items" :key="it.name" class="item hairline" @click="toggle(it)">
+            <view :class="['check', { on: it.bought }]">{{ it.bought ? '✓' : '' }}</view>
+            <view class="item-main">
+              <text :class="['item-name', { done: it.bought }]">{{ it.name }}</text>
+              <text class="muted">{{ it.fromDishes.join('、') }}</text>
+            </view>
+            <text class="item-qty">{{ it.qty.join(' + ') }}</text>
+            <view class="have" @click.stop="setPantry(it.name, true)">家里有</view>
+          </view>
+
+          <view v-if="shopping.stocked.length" class="stocked">
+            <view class="stocked-head" @click="showStocked = !showStocked">
+              <text>家里有的 {{ shopping.stocked.length }} 样，不用买</text>
+              <text class="link">{{ showStocked ? '收起' : '展开' }}</text>
+            </view>
+            <view v-if="showStocked">
+              <view v-for="it in shopping.stocked" :key="it.name" class="item hairline">
+                <view class="item-main">
+                  <text class="item-name">{{ it.name }}</text>
+                </view>
+                <text class="item-qty">{{ it.qty.join(' + ') }}</text>
+                <view class="have" @click="setPantry(it.name, false)">用完了</view>
+              </view>
+            </view>
+          </view>
+        </block>
+      </StateView>
+    </view>
+
+    <view v-if="shopping.items.length" class="bar">
+      <view class="btn plain grow" @click="copyList">复制清单</view>
+      <button class="btn grow share" open-type="share">发给家人</button>
+    </view>
   </view>
 </template>
 
 <script setup lang="ts">
 import { onShareAppMessage } from '@dcloudio/uni-app'
-import { storeToRefs } from 'pinia'
 import { computed, ref } from 'vue'
 
 import { errorMessage, menuCo } from '@/api/menu'
+import EmptyState from '@/components/EmptyState.vue'
+import NoFamily from '@/components/NoFamily.vue'
 import StateView from '@/components/StateView.vue'
 import { usePageData } from '@/composables/use-page-data'
-import { useSessionStore } from '@/stores/session'
-import type { ShoppingItem } from '@/types/models'
+import { useTabBar } from '@/composables/use-tab-bar'
+import type { Shopping, ShoppingItem } from '@/types/models'
+import { addDays, relativeDay, today } from '@/utils/date'
 
-const { date, meal } = storeToRefs(useSessionStore())
-const items = ref<ShoppingItem[]>([])
-const boughtCount = computed(() => items.value.filter((it) => it.bought).length)
+useTabBar(2)
+
+const RANGES = [
+  { days: 1, label: '今天' },
+  { days: 2, label: '明天前' },
+  { days: 3, label: '3 天' },
+  { days: 7, label: '7 天' },
+]
+
+const days = ref(3)
+const shopping = ref<Shopping>({ items: [], stocked: [] })
+const showStocked = ref(false)
+
+const from = computed(() => today())
+const to = computed(() => addDays(from.value, days.value - 1))
+const rangeLabel = computed(() =>
+  days.value === 1 ? '今天' : `${relativeDay(from.value)} 到 ${relativeDay(to.value)}`
+)
+const boughtCount = computed(() => shopping.value.items.filter((it) => it.bought).length)
 const percent = computed(() =>
-  items.value.length ? Math.round((boughtCount.value / items.value.length) * 100) : 0
+  shopping.value.items.length ? Math.round((boughtCount.value / shopping.value.items.length) * 100) : 0
 )
 
-const { loading, error, reload } = usePageData(async () => {
-  items.value = await menuCo().getShopping(date.value, meal.value)
+const { loading, error, noFamily, reload } = usePageData(async () => {
+  shopping.value = await menuCo().getShopping(from.value, to.value)
 })
 
-async function toggle(name: string, bought: boolean): Promise<void> {
-  const it = items.value.find((i) => i.name === name)
-  if (it) it.bought = bought
+function pickRange(value: number): void {
+  days.value = value
+  void reload()
+}
+
+async function toggle(it: ShoppingItem): Promise<void> {
+  const next = !it.bought
+  it.bought = next
   try {
-    await menuCo().setBought(date.value, meal.value, name, bought)
+    await menuCo().setBought(from.value, to.value, it.name, next)
   } catch (err) {
-    if (it) it.bought = !bought
+    it.bought = !next
     uni.showToast({ title: errorMessage(err), icon: 'none' })
   }
+}
+
+async function setPantry(name: string, have: boolean): Promise<void> {
+  try {
+    await menuCo().setPantry(name, have)
+    shopping.value = await menuCo().getShopping(from.value, to.value)
+  } catch (err) {
+    uni.showToast({ title: errorMessage(err), icon: 'none' })
+  }
+}
+
+function copyList(): void {
+  const lines = shopping.value.items
+    .filter((it) => !it.bought)
+    .map((it) => `${it.name} ${it.qty.join('+')}`.trim())
+  uni.setClipboardData({ data: `要买的：\n${lines.join('\n')}` })
 }
 
 onShareAppMessage(() => ({ title: '帮忙买一下这些菜', path: '/pages/shopping/index' }))
 </script>
 
 <style lang="scss" scoped>
-.head {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
+.ranges {
+  display: inline-flex;
+  margin-top: var(--space-4);
+  padding: 3px;
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: var(--radius-pill);
 }
 
-.row {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  min-height: 56px;
-  padding: var(--space-2) var(--space-4);
+.range {
+  padding: 6px 16px;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 14px;
+  border-radius: var(--radius-pill);
 
-  & + & {
-    border-top: 1px solid var(--c-line);
+  &.on {
+    color: var(--c-accent);
+    font-weight: 600;
+    background: #fff;
   }
 }
 
-.row-main {
+.sheet {
+  padding-bottom: 110px;
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  align-items: center;
+  padding: 48px 0;
+  text-align: center;
+}
+
+.empty-title {
+  font-family: var(--font-serif);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.progress {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  padding-bottom: var(--space-3);
+  font-size: 13px;
+  color: var(--c-text-2);
+}
+
+.bar-track {
+  flex: 1;
+  height: 4px;
+  overflow: hidden;
+  background: var(--c-line);
+  border-radius: 2px;
+}
+
+.bar-fill {
+  height: 100%;
+  background: var(--c-done);
+  border-radius: 2px;
+  transition: width 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.item {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  padding: var(--space-3) 0;
+}
+
+.check {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  color: #fff;
+  font-size: 13px;
+  border: 1.5px solid var(--c-line-strong);
+  border-radius: 50%;
+
+  &.on {
+    background: var(--c-done);
+    border-color: var(--c-done);
+  }
+}
+
+.item-main {
   display: flex;
   flex: 1;
   flex-direction: column;
   min-width: 0;
 }
 
-.row-name {
+.item-name {
   font-size: 16px;
-  font-weight: 500;
 
   &.done {
     color: var(--c-text-2);
-    font-weight: 400;
     text-decoration: line-through;
   }
+}
+
+.item-qty {
+  color: var(--c-text-2);
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+.have {
+  padding: 2px var(--space-3);
+  color: var(--c-text-2);
+  font-size: 12px;
+  border: 1px solid var(--c-line-strong);
+  border-radius: var(--radius-pill);
+}
+
+.stocked {
+  margin-top: var(--space-4);
+}
+
+.stocked-head {
+  display: flex;
+  justify-content: space-between;
+  padding: var(--space-3) 0;
+  color: var(--c-text-2);
+  font-size: 13px;
+}
+
+.link {
+  color: var(--c-accent);
+}
+
+.grow {
+  flex: 1;
+}
+
+.share {
+  margin: 0;
+  line-height: 44px;
 }
 </style>
