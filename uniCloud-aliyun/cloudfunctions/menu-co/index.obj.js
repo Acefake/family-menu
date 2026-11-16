@@ -1,6 +1,14 @@
 'use strict'
 
-const { code2Session, createToken, loadConfig, verifyToken } = require('fm-common')
+// 公共模块加载失败时不让整个云对象崩成 500，而是在每次调用时把原因返回给客户端
+let common = {}
+let commonLoadError = null
+try {
+  common = require('fm-common')
+} catch (e) {
+  commonLoadError = e
+}
+const { code2Session, createToken, loadConfig, verifyToken } = common
 
 const db = uniCloud.database()
 const dbCmd = db.command
@@ -31,7 +39,7 @@ function checkSlot(date, meal) {
   if (!MEALS.includes(meal)) throw fail('餐次无效')
 }
 
-module.exports = {
+const methods = {
   async _before() {
     if (PUBLIC_METHODS.includes(this.getMethodName())) return
     this.config = loadConfig()
@@ -240,3 +248,28 @@ module.exports = {
     await menus.doc(menu._id).update({ bought: dbCmd.set(next) })
   },
 }
+
+/**
+ * 统一错误出口：带 errCode 的业务错误原样返回；
+ * 其余未预期的错误转成可读的 errMsg，避免客户端只看到 500。
+ */
+function guard(fn) {
+  return async function (...args) {
+    try {
+      if (commonLoadError) throw new Error(`公共模块 fm-common 加载失败：${commonLoadError.message}`)
+      return await fn.apply(this, args)
+    } catch (e) {
+      if (e && e.errCode) throw e
+      console.error('[menu-co]', e)
+      throw fail(`服务端错误：${(e && e.message) || e}`, 'INTERNAL')
+    }
+  }
+}
+
+// 以下划线开头的是私有方法（_familyId、_menuDoc），保持原样；_before 钩子同样需要兜底
+module.exports = Object.fromEntries(
+  Object.entries(methods).map(([name, fn]) => [
+    name,
+    name === '_before' || !name.startsWith('_') ? guard(fn) : fn,
+  ])
+)
