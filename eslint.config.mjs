@@ -24,7 +24,7 @@ export default tseslint.config(
   },
   {
     // 云函数是 CommonJS，运行在 uniCloud（Node）里
-    files: ['uniCloud-aliyun/**/*.js', 'uniCloud-alipay/**/*.js'],
+    files: ['uniCloud-*/**/*.js'],
     languageOptions: {
       sourceType: 'commonjs',
       globals: { ...globals.node, uniCloud: 'readonly' },
