@@ -16,23 +16,14 @@ function loadConfig() {
   return config
 }
 
-// 不用 'base64url' 编码名：较老的 Node 运行时（本地云函数）不支持
-function toBase64Url(buf) {
-  return Buffer.from(buf).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
-}
-
-function fromBase64Url(str) {
-  return Buffer.from(str.replace(/-/g, '+').replace(/_/g, '/'), 'base64')
-}
-
 function sign(payload, secret) {
-  return toBase64Url(nodeCrypto.createHmac('sha256', secret).update(payload).digest())
+  return nodeCrypto.createHmac('sha256', secret).update(payload).digest('base64url')
 }
 
 /** 令牌格式：base64url(JSON{uid,exp}).签名 */
 function createToken(uid, config) {
   const exp = Date.now() + (config.tokenExpiresIn || 2592000) * 1000
-  const payload = toBase64Url(JSON.stringify({ uid, exp }))
+  const payload = Buffer.from(JSON.stringify({ uid, exp })).toString('base64url')
   return { token: `${payload}.${sign(payload, config.tokenSecret)}`, tokenExpired: exp }
 }
 
@@ -46,7 +37,7 @@ function verifyToken(token, config) {
   const b = Buffer.from(expected)
   if (a.length !== b.length || !nodeCrypto.timingSafeEqual(a, b)) return ''
   try {
-    const { uid, exp } = JSON.parse(fromBase64Url(payload).toString())
+    const { uid, exp } = JSON.parse(Buffer.from(payload, 'base64url').toString())
     return typeof uid === 'string' && exp > Date.now() ? uid : ''
   } catch {
     return ''
