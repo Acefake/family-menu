@@ -8,6 +8,8 @@ declare module '*.vue' {
 }
 
 interface ImportMetaEnv {
+  /** alipay（支付宝云，默认）| aliyun | tencent，要和 uniCloud-<provider> 目录一致 */
+  readonly VITE_UNICLOUD_PROVIDER?: string
   readonly VITE_UNICLOUD_SPACE_ID?: string
   readonly VITE_UNICLOUD_CLIENT_SECRET?: string
 }

@@ -1,7 +1,7 @@
 import { getCloud } from '@/api/cloud'
 import type { Dish, DishInput, Family, Meal, Menu, ShoppingItem } from '@/types/models'
 
-/** 云对象 menu-co 的前端类型（实现见 uniCloud-aliyun/cloudfunctions/menu-co） */
+/** 云对象 menu-co 的前端类型（实现见 uniCloud-alipay/cloudfunctions/menu-co） */
 interface MenuCo {
   login(code: string, nickname?: string): Promise<{ token: string; tokenExpired: number; uid: string }>
   getFamily(): Promise<Family | null>

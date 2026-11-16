@@ -1,4 +1,4 @@
-/** 与 uniCloud-aliyun/database/*.schema.json 对应的前端类型 */
+/** 与 uniCloud-alipay/database/*.schema.json 对应的前端类型 */
 
 export type Meal = 'breakfast' | 'lunch' | 'dinner'
 

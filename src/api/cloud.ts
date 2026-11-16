@@ -9,11 +9,13 @@ let instance: UniCloudNamespace.UniCloud | null = null
 export function getCloud(): UniCloudNamespace.UniCloud {
   if (instance) return instance
 
+  const provider = (import.meta.env.VITE_UNICLOUD_PROVIDER ||
+    'alipay') as UniCloudNamespace.UniCloudOptions['provider']
   const spaceId = import.meta.env.VITE_UNICLOUD_SPACE_ID
   const clientSecret = import.meta.env.VITE_UNICLOUD_CLIENT_SECRET
 
   if (spaceId && clientSecret) {
-    instance = uniCloud.init({ provider: 'aliyun', spaceId, clientSecret })
+    instance = uniCloud.init({ provider, spaceId, clientSecret })
     return instance
   }
   if ((uniCloud as { _isDefault?: boolean })._isDefault) {
