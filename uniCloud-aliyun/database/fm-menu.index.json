@@ -1,0 +1,22 @@
+[
+  {
+    "IndexName": "slot",
+    "MgoKeySchema": {
+      "MgoIndexKeys": [
+        {
+          "Name": "familyId",
+          "Direction": "1"
+        },
+        {
+          "Name": "date",
+          "Direction": "1"
+        },
+        {
+          "Name": "meal",
+          "Direction": "1"
+        }
+      ],
+      "MgoIsUnique": true
+    }
+  }
+]

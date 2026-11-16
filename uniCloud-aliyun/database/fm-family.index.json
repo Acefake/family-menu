@@ -1,0 +1,14 @@
+[
+  {
+    "IndexName": "inviteCode",
+    "MgoKeySchema": {
+      "MgoIndexKeys": [
+        {
+          "Name": "inviteCode",
+          "Direction": "1"
+        }
+      ],
+      "MgoIsUnique": true
+    }
+  }
+]

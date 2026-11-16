@@ -1,0 +1,5 @@
+dist
+unpackage
+pnpm-lock.yaml
+src/manifest.json
+src/pages.json

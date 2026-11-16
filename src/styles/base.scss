@@ -1,0 +1,65 @@
+/* 设计稿 tokens：暖白底 + 番茄红强调色（见 README 的设计稿链接） */
+page {
+  --c-bg: #fbf7f2;
+  --c-surface: #ffffff;
+  --c-muted-bg: #f1e9df;
+  --c-line: #efe6dc;
+  --c-line-strong: #e5dcd2;
+  --c-text: #2b2420;
+  --c-text-2: #6e625a;
+  --c-accent: #c8431b;
+  --c-accent-soft: #fbe6dc;
+  --c-done: #3d7a4c;
+
+  --radius-sm: 12px;
+  --radius-md: 16px;
+  --radius-lg: 20px;
+  --radius-pill: 999px;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+
+  --font-serif: 'Noto Serif SC', 'Songti SC', serif;
+
+  /* wot-design-uni 主题色 */
+  --wot-color-theme: var(--c-accent);
+
+  background: var(--c-bg);
+  color: var(--c-text);
+  font-size: 15px;
+  font-family: -apple-system, 'PingFang SC', 'Noto Sans SC', sans-serif;
+}
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding: var(--space-2) var(--space-5) var(--space-6);
+}
+
+.page-title {
+  font-family: var(--font-serif);
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.muted {
+  color: var(--c-text-2);
+  font-size: 13px;
+}
+
+.card {
+  background: var(--c-surface);
+  border-radius: var(--radius-md);
+}
+
+.state {
+  padding: 48px 0;
+  color: var(--c-text-2);
+  text-align: center;
+}

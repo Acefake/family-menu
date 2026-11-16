@@ -1,0 +1,6 @@
+{
+  "name": "fm-common",
+  "version": "0.1.0",
+  "description": "family-menu 云函数公共模块：配置、令牌、微信登录",
+  "main": "index.js"
+}

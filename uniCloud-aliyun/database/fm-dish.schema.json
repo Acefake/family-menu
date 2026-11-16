@@ -1,0 +1,81 @@
+{
+  "bsonType": "object",
+  "description": "菜品（客户端无权限，只经由云对象 menu-co 访问）",
+  "required": ["familyId", "name"],
+  "permission": {
+    "read": false,
+    "create": false,
+    "update": false,
+    "delete": false
+  },
+  "properties": {
+    "_id": {
+      "description": "ID，系统自动生成"
+    },
+    "familyId": {
+      "bsonType": "string",
+      "description": "所属家庭"
+    },
+    "name": {
+      "bsonType": "string",
+      "description": "菜名",
+      "maxLength": 30
+    },
+    "photo": {
+      "bsonType": "string",
+      "description": "照片 fileID"
+    },
+    "category": {
+      "bsonType": "string",
+      "enum": ["meat", "veg", "soup", "staple", "other"]
+    },
+    "tags": {
+      "bsonType": "array",
+      "items": {
+        "bsonType": "string"
+      }
+    },
+    "minutes": {
+      "bsonType": "int",
+      "description": "用时（分钟）"
+    },
+    "ingredients": {
+      "bsonType": "array",
+      "items": {
+        "bsonType": "object",
+        "properties": {
+          "name": {
+            "bsonType": "string",
+            "description": "食材"
+          },
+          "qty": {
+            "bsonType": "string",
+            "description": "用量"
+          }
+        }
+      }
+    },
+    "steps": {
+      "bsonType": "array",
+      "items": {
+        "bsonType": "string"
+      }
+    },
+    "timesEaten": {
+      "bsonType": "int",
+      "description": "做好过几次"
+    },
+    "lastEatenAt": {
+      "bsonType": "timestamp",
+      "description": "最近一次做好"
+    },
+    "createdAt": {
+      "bsonType": "timestamp",
+      "description": "创建时间"
+    },
+    "updatedAt": {
+      "bsonType": "timestamp",
+      "description": "更新时间"
+    }
+  }
+}

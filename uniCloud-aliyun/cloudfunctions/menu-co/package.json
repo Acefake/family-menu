@@ -1,0 +1,15 @@
+{
+  "name": "menu-co",
+  "version": "0.1.0",
+  "description": "家庭菜单云对象：登录、家庭、菜谱、菜单、采购清单",
+  "main": "index.obj.js",
+  "dependencies": {
+    "fm-common": "file:../common/fm-common"
+  },
+  "extensions": {},
+  "cloudfunction-config": {
+    "runtime": "Nodejs18",
+    "timeout": 10,
+    "memorySize": 256
+  }
+}
