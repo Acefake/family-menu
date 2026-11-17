@@ -63,6 +63,11 @@
           </view>
 
           <view class="rows">
+            <view class="setting-row hairline" @click="go('/pages/feeding/index')">
+              <text class="setting-label">辅食观察</text>
+              <text class="setting-value">{{ feedingSummary }}</text>
+              <text class="setting-chev">›</text>
+            </view>
             <view class="setting-row hairline" @click="go('/pages/diary/index')">
               <text class="setting-label">饮食日记</text>
               <text class="setting-value">本月 {{ servedCount }} 餐</text>
@@ -129,6 +134,7 @@ import { useScrollTop } from '@/composables/use-scroll-top'
 import { useTabBar } from '@/composables/use-tab-bar'
 import { useSessionStore } from '@/stores/session'
 import { today } from '@/utils/date'
+import { observationDay } from '@/pages/feeding/model'
 
 import { avatarFor } from './avatars'
 import AvatarPicker from './AvatarPicker.vue'
@@ -143,6 +149,7 @@ const { family, uid } = storeToRefs(session)
 const newName = ref('')
 const code = ref('')
 const servedCount = ref(0)
+const feedingSummary = ref('记录宝宝的新食物')
 const sharedCode = ref('')
 const invite = ref<{ name: string; memberCount: number } | null>(null)
 
@@ -175,6 +182,13 @@ const members = computed(() => {
 
 const { loading, error, noFamily, refreshing, reload } = usePageData(async () => {
   servedCount.value = (await menuCo().listServed(today().slice(0, 7))).length
+  feedingSummary.value = '记录宝宝的新食物'
+  try {
+    const food = (await menuCo().listFeeding()).find((f) => f.status === 'observing')
+    if (food) feedingSummary.value = `${food.name} · 第${observationDay(food)}天`
+  } catch {
+    feedingSummary.value = '进入查看观察记录'
+  }
 })
 
 /** 没有家庭又带着邀请码进来：弹窗问是否加入，同时在页面上留一张加入卡片 */

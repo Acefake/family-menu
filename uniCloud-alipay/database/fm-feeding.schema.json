@@ -1,0 +1,11 @@
+{
+  "bsonType": "object",
+  "description": "家庭共享辅食观察，所有访问经 menu-co 鉴权，家庭单文档事务避免并发覆盖",
+  "required": ["familyId", "foods"],
+  "permission": { "read": false, "create": false, "update": false, "delete": false },
+  "properties": {
+    "_id": { "bsonType": "string" },
+    "familyId": { "bsonType": "string" },
+    "foods": { "bsonType": "array", "maxItems": 100 }
+  }
+}

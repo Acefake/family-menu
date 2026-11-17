@@ -59,7 +59,7 @@ pnpm check        # typecheck + eslint + prettier
      - 各模型是否免费、价格以平台的价格页为准（硅基流动见 [siliconflow.cn/pricing](https://www.siliconflow.cn/pricing)）
    - `config.json` 已被 gitignore，不要提交。
 4. 右键 `common/fm-common` → 上传公共模块；右键 `menu-co` → 管理公共模块依赖确认包含 fm-common → 上传部署。
-5. 右键 `database` → 初始化云数据库（创建 4 张表及索引）。
+5. 右键 `database` → 初始化云数据库（创建表及索引，包含辅食观察表 `fm-feeding`）。
 6. 在 `src/manifest.json` 的 `mp-weixin.appid` 填入小程序 AppID。
 7. 微信公众平台 → 开发设置 → 服务器域名：按 uniCloud 文档添加支付宝云服务空间的 request / uploadFile 域名。
 
@@ -67,6 +67,14 @@ pnpm check        # typecheck + eslint + prettier
 
 - 个人主体小程序也需要先完成**小程序备案**再提审。
 - 服务空间选免费版的话，记得在到期前续期，否则会被释放。
+
+### 辅食观察
+
+入口为「我的 → 辅食观察」，包含观察首页、每日打卡、食物档案。数据在家庭内共享；连续记录3至5天无异常后归入「吃过无异常」，记录症状会暂停观察。档案可搜索、查看历史，并复制完整文本导出。
+
+已有环境更新时，先上传 `database/fm-feeding.schema.json` 创建新表，再上传部署整个 `menu-co` 云对象（包含 `feeding.js`），最后重新编译小程序。只更新前端不能启用云端保存。
+
+本地检查：`node --test uniCloud-alipay/cloudfunctions/menu-co/*.test.js`、`pnpm typecheck`、`pnpm lint`、`pnpm build`。事务测试使用官方返回格式的模拟数据库，不能代替真实服务空间验证；上线前须在微信开发者工具中检查新增、保存后重开、家人共享、异常暂停和档案导出。
 
 ## 后续
 

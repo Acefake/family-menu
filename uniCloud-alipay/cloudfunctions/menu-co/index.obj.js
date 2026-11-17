@@ -12,6 +12,7 @@ const {
   verifyToken,
 } = require('fm-common')
 const homeDishes = require('./home-dishes.json')
+const { feedingMethods } = require('./feeding')
 
 const db = uniCloud.database()
 const dbCmd = db.command
@@ -382,6 +383,7 @@ async function addHomeDish(familyId, categories, { key, ...recipe }) {
 }
 
 module.exports = {
+  ...feedingMethods(db),
   async _before() {
     if (PUBLIC_METHODS.includes(this.getMethodName())) return
     this.config = loadConfig()

@@ -36,15 +36,17 @@ function fixture(options = {}) {
   const context = {
     module: { exports: {} },
     require: (name) =>
-      name === 'crypto'
-        ? require(name)
-        : {
-            generateImage: async (...args) => {
-              if (options.failGeneration) throw new Error('生成失败')
-              options.generationArgs = args
-              return 'cloud://own/generated.png'
+      name === './feeding'
+        ? require('./feeding')
+        : name === 'crypto'
+          ? require(name)
+          : {
+              generateImage: async (...args) => {
+                if (options.failGeneration) throw new Error('生成失败')
+                options.generationArgs = args
+                return 'cloud://own/generated.png'
+              },
             },
-          },
     uniCloud: {
       database: () => ({
         command: { set: (value) => value },

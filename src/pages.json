@@ -101,6 +101,30 @@
       "style": {
         "navigationBarTitleText": "编辑菜品"
       }
+    },
+    {
+      "path": "pages/feeding/index",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "辅食观察",
+        "navigationBarTextStyle": "white"
+      }
+    },
+    {
+      "path": "pages/feeding/checkin",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "每日打卡",
+        "navigationBarTextStyle": "black"
+      }
+    },
+    {
+      "path": "pages/feeding/archive",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "食物档案",
+        "navigationBarTextStyle": "white"
+      }
     }
   ],
   "globalStyle": {

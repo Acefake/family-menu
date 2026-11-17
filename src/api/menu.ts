@@ -1,3 +1,4 @@
+import type { FeedingFood, FeedingLog } from '@/pages/feeding/model'
 import type {
   AiSettings,
   Category,
@@ -13,6 +14,13 @@ import type {
 
 /** 云对象 menu-co 的前端类型（实现见 uniCloud-alipay/cloudfunctions/menu-co） */
 interface MenuCo {
+  /** 家庭共享的完整辅食档案。 */
+  listFeeding(): Promise<FeedingFood[]>
+  createFeeding(input: { name: string; startDate: string; days: number }): Promise<string>
+  saveFeedingLog(id: string, input: FeedingLog): Promise<void>
+  /** 删除本家庭指定食物的一天记录，重复调用不影响其他日期。 */
+  deleteFeedingLog(id: string, date: string): Promise<void>
+  setFeedingStatus(id: string, status: 'pending' | 'confirmed', note?: string): Promise<void>
   login(code: string, nickname?: string): Promise<{ token: string; tokenExpired: number; uid: string }>
   getFamily(): Promise<Family | null>
   createFamily(name: string): Promise<Family>
