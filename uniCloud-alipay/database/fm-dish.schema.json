@@ -33,6 +33,10 @@
       "bsonType": "string",
       "description": "所属分类 ID，对应 fm-family.categories"
     },
+    "subCategory": {
+      "bsonType": "string",
+      "description": "二级分类 ID，对应 fm-family.categories[].subs；空字符串表示未细分"
+    },
     "tags": {
       "bsonType": "array",
       "items": {

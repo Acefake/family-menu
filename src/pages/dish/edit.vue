@@ -14,6 +14,7 @@
     <wd-cell-group border>
       <wd-input v-model="form.name" label="菜名" placeholder="比如：可乐鸡翅" clearable />
       <wd-picker v-model="form.category" label="分类" :columns="categoryColumns" />
+      <wd-picker v-if="subColumns.length" v-model="subModel" label="二级分类" :columns="subColumns" />
       <view class="manage" @click="goCategories">管理分类</view>
       <wd-input v-model="minutesText" label="用时" type="number" placeholder="分钟" />
       <wd-input v-model="tagsText" label="标签" placeholder="用空格分隔，如：甜口 快手菜" />
@@ -37,7 +38,7 @@
 <script setup lang="ts">
 import { onLoad } from '@dcloudio/uni-app'
 import { storeToRefs } from 'pinia'
-import { computed, reactive, ref } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 
 import { errorMessage, menuCo } from '@/api/menu'
 import { useSessionStore } from '@/stores/session'
@@ -49,10 +50,26 @@ const categoryColumns = computed(() =>
   (family.value?.categories ?? []).map((c) => ({ value: c.id, label: c.name }))
 )
 
+const NO_SUB = '_none'
+/** 当前一级分类下的二级分类选项；该分类没有二级分类时为空，不显示选择器 */
+const subColumns = computed(() => {
+  const subs = family.value?.categories.find((c) => c.id === form.category)?.subs ?? []
+  return subs.length
+    ? [{ value: NO_SUB, label: '不细分' }, ...subs.map((s) => ({ value: s.id, label: s.name }))]
+    : []
+})
+const subModel = computed({
+  get: () => form.subCategory || NO_SUB,
+  set: (v: string) => {
+    form.subCategory = v === NO_SUB ? '' : v
+  },
+})
+
 const form = reactive<DishInput>({
   name: '',
   photo: '',
   category: family.value?.categories[0]?.id ?? 'other',
+  subCategory: '',
   tags: [],
   ingredients: [],
   steps: [],
@@ -67,6 +84,11 @@ const uploading = ref(false)
 const quickText = ref('')
 const drafting = ref(false)
 
+// 换了一级分类后，原来的二级分类不再适用就清掉
+watch(subColumns, (cols) => {
+  if (form.subCategory && !cols.some((c) => c.value === form.subCategory)) form.subCategory = ''
+})
+
 onLoad(async (query) => {
   const id = query?.id ? String(query.id) : ''
   if (!id) return
@@ -77,6 +99,7 @@ onLoad(async (query) => {
       name: dish.name,
       photo: dish.photo ?? '',
       category: dish.category,
+      subCategory: dish.subCategory ?? '',
     })
     minutesText.value = dish.minutes ? String(dish.minutes) : ''
     tagsText.value = dish.tags.join(' ')
@@ -105,6 +128,7 @@ async function draft(): Promise<void> {
     const d = await menuCo().draftDish(quickText.value.trim())
     form.name = d.name
     form.category = d.category
+    form.subCategory = d.subCategory ?? ''
     minutesText.value = d.minutes ? String(d.minutes) : ''
     tagsText.value = d.tags.join(' ')
     ingredientsText.value = d.ingredients.map((i) => `${i.name} ${i.qty}`.trim()).join('\n')

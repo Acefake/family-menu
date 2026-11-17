@@ -11,9 +11,16 @@ export const MEALS: { value: Meal; label: string }[] = [
 /** 分类由家庭自己维护，这里只存 ID；默认有 meat / veg / soup / staple / other 五个 */
 export type DishCategory = string
 
+/** 一级分类下的二级分类，比如「荤菜」下的猪肉 / 牛羊 / 鸡鸭 */
+export interface SubCategory {
+  id: string
+  name: string
+}
+
 export interface Category {
   id: DishCategory
   name: string
+  subs?: SubCategory[]
 }
 
 const TONES = ['meat', 'veg', 'soup', 'staple'] as const
@@ -28,6 +35,10 @@ export function categoryTone(id: DishCategory): string {
 
 export function categoryName(categories: Category[], id: DishCategory): string {
   return categories.find((c) => c.id === id)?.name ?? '未分类'
+}
+
+export function subCategoryName(categories: Category[], id: DishCategory, subId?: string): string {
+  return categories.find((c) => c.id === id)?.subs?.find((s) => s.id === subId)?.name ?? ''
 }
 
 export const MEAL_LABEL = Object.fromEntries(MEALS.map((m) => [m.value, m.label])) as Record<Meal, string>
@@ -58,6 +69,8 @@ export interface Dish {
   name: string
   photo?: string
   category: DishCategory
+  /** 二级分类 ID，空表示没细分 */
+  subCategory?: string
   tags: string[]
   minutes?: number
   ingredients: Ingredient[]
