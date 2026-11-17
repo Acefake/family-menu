@@ -1,5 +1,11 @@
 <template>
   <view class="page">
+    <view v-if="!form._id" class="quick">
+      <view class="label">快捷录入 <text class="muted">写菜名或贴一段做法，AI 帮你填好</text></view>
+      <wd-textarea v-model="quickText" placeholder="比如：番茄炒蛋" :maxlength="800" auto-height />
+      <wd-button block plain :loading="drafting" @click="draft">AI 生成菜谱</wd-button>
+    </view>
+
     <view class="photo" @click="choosePhoto">
       <image v-if="photoUrl" class="photo-img" :src="photoUrl" mode="aspectFill" />
       <text v-if="!photoUrl" class="muted">{{ uploading ? '上传中…' : '点击添加照片' }}</text>
@@ -58,6 +64,8 @@ const ingredientsText = ref('')
 const stepsText = ref('')
 const saving = ref(false)
 const uploading = ref(false)
+const quickText = ref('')
+const drafting = ref(false)
 
 onLoad(async (query) => {
   const id = query?.id ? String(query.id) : ''
@@ -84,6 +92,29 @@ function lines(text: string): string[] {
     .split('\n')
     .map((l) => l.trim())
     .filter(Boolean)
+}
+
+/** 让 AI 生成草稿并填进表单，不直接保存，用户检查后点「保存」 */
+async function draft(): Promise<void> {
+  if (!quickText.value.trim()) {
+    uni.showToast({ title: '先写个菜名', icon: 'none' })
+    return
+  }
+  drafting.value = true
+  try {
+    const d = await menuCo().draftDish(quickText.value.trim())
+    form.name = d.name
+    form.category = d.category
+    minutesText.value = d.minutes ? String(d.minutes) : ''
+    tagsText.value = d.tags.join(' ')
+    ingredientsText.value = d.ingredients.map((i) => `${i.name} ${i.qty}`.trim()).join('\n')
+    stepsText.value = d.steps.join('\n')
+    uni.showToast({ title: '已填好，检查后保存', icon: 'none' })
+  } catch (err) {
+    uni.showToast({ title: errorMessage(err), icon: 'none' })
+  } finally {
+    drafting.value = false
+  }
 }
 
 function goCategories(): void {
@@ -148,6 +179,12 @@ async function remove(): Promise<void> {
 </script>
 
 <style lang="scss" scoped>
+.quick {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
 .photo {
   display: flex;
   align-items: center;

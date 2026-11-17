@@ -9,7 +9,7 @@
   "extensions": {},
   "cloudfunction-config": {
     "runtime": "Nodejs18",
-    "timeout": 10,
+    "timeout": 20,
     "memorySize": 256
   }
 }

@@ -1,7 +1,7 @@
 'use strict'
 
 const { createHash } = require('crypto')
-const { code2Session, createToken, loadConfig, verifyToken } = require('fm-common')
+const { askJson, code2Session, createToken, loadConfig, verifyToken } = require('fm-common')
 const homeDishes = require('./home-dishes.json')
 
 const db = uniCloud.database()
@@ -385,6 +385,38 @@ module.exports = {
       createdAt: Date.now(),
     })
     return res.id
+  },
+
+  /**
+   * 快捷录入：根据一句话（菜名或一段做法）让 AI 生成菜谱草稿，只返回不入库，
+   * 前端填进表单让用户检查后再保存。
+   */
+  async draftDish(input) {
+    const categories = categoriesOf(await loadFamilyDoc(familyIdOf(this.user)))
+    const content = text(input, 800, '内容')
+    const system =
+      '你是家常菜谱助手。根据用户给的菜名或做法，输出一道家常菜的 JSON，不要输出其他文字。' +
+      '字段：name 菜名；category 只能从下面的分类 id 里选一个；minutes 总用时（分钟，整数，不确定就省略）；' +
+      'tags 口味或特点标签，最多 4 个，每个不超过 4 字；ingredients 数组，每项 {name, qty}，qty 带单位如"2个"，不确定写空字符串；' +
+      'steps 字符串数组，每步一句话。用户给了做法就按原意整理，没给就按通行的家常做法写。' +
+      `分类：${categories.map((c) => `${c.id}=${c.name}`).join('，')}`
+    const draft = await askJson(this.config, system, content)
+    if (!draft || typeof draft.name !== 'string' || !draft.name.trim())
+      throw fail('没识别出菜名，换个说法试试')
+    return {
+      name: draft.name.trim().slice(0, 30),
+      category: resolveCategory(categories, draft.category),
+      minutes: Number(draft.minutes) > 0 ? Math.min(Math.round(Number(draft.minutes)), 1440) : null,
+      tags: names(draft.tags, 4, 6),
+      ingredients: (Array.isArray(draft.ingredients) ? draft.ingredients : [])
+        .slice(0, 30)
+        .map((i) => ({
+          name: String((i && i.name) || '').slice(0, 20),
+          qty: String((i && i.qty) || '').slice(0, 20),
+        }))
+        .filter((i) => i.name),
+      steps: names(draft.steps, 20, 200),
+    }
   },
 
   async removeDish(id) {

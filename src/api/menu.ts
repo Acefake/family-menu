@@ -14,6 +14,9 @@ interface MenuCo {
   importHomeDishes(): Promise<number>
   getDish(id: string): Promise<Dish>
   saveDish(dish: DishInput): Promise<string>
+  draftDish(
+    input: string
+  ): Promise<Pick<DishInput, 'name' | 'category' | 'minutes' | 'tags' | 'ingredients' | 'steps'>>
   removeDish(id: string): Promise<void>
   getSlot(date: string, meal: Meal): Promise<Slot>
   listSlots(from: string, to: string): Promise<Slot[]>
