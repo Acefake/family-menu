@@ -4,5 +4,9 @@
     "appsecret": "同上，不要提交到仓库"
   },
   "tokenSecret": "一串足够长的随机字符串，用于签发登录令牌",
-  "tokenExpiresIn": 2592000
+  "tokenExpiresIn": 2592000,
+  "ai": {
+    "apiKey": "智谱开放平台 bigmodel.cn 的 API Key（glm-4-flash 免费）",
+    "model": "glm-4-flash"
+  }
 }

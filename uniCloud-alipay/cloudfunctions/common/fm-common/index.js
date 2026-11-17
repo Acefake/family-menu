@@ -59,4 +59,41 @@ async function code2Session(code, config) {
   return res.data.openid
 }
 
-module.exports = { loadConfig, createToken, verifyToken, code2Session }
+const AI_DEFAULT_URL = 'https://open.bigmodel.cn/api/paas/v4/chat/completions'
+const AI_DEFAULT_MODEL = 'glm-4-flash'
+
+/**
+ * 调用 OpenAI 兼容的对话接口（默认智谱 glm-4-flash，免费），返回解析后的 JSON 对象。
+ * 配置见 config.json 的 ai.apiKey / ai.model / ai.baseUrl。
+ */
+async function askJson(config, system, user) {
+  const ai = config.ai || {}
+  if (!ai.apiKey) throw new Error('未配置 AI：请在 config.json 填写 ai.apiKey')
+  const res = await uniCloud.httpclient.request(ai.baseUrl || AI_DEFAULT_URL, {
+    method: 'POST',
+    contentType: 'json',
+    dataType: 'json',
+    timeout: 15000,
+    headers: { Authorization: `Bearer ${ai.apiKey}` },
+    data: {
+      model: ai.model || AI_DEFAULT_MODEL,
+      temperature: 0.2,
+      max_tokens: 1200,
+      response_format: { type: 'json_object' },
+      messages: [
+        { role: 'system', content: system },
+        { role: 'user', content: user },
+      ],
+    },
+  })
+  const content = res.data && res.data.choices && res.data.choices[0] && res.data.choices[0].message.content
+  if (!content) {
+    throw new Error(`AI 调用失败：${(res.data && res.data.error && res.data.error.message) || res.status}`)
+  }
+  // 模型偶尔会包一层 ```json 代码块
+  const match = String(content).match(/\{[\s\S]*\}/)
+  if (!match) throw new Error('AI 返回的内容无法解析')
+  return JSON.parse(match[0])
+}
+
+module.exports = { loadConfig, createToken, verifyToken, code2Session, askJson }

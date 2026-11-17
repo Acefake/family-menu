@@ -1,5 +1,11 @@
 <template>
   <view class="page">
+    <view v-if="!form._id" class="quick">
+      <view class="label">快捷录入 <text class="muted">写菜名或贴一段做法，AI 帮你填好</text></view>
+      <wd-textarea v-model="quickText" placeholder="比如：番茄炒蛋" :maxlength="800" auto-height />
+      <wd-button block plain :loading="drafting" @click="draft">AI 生成菜谱</wd-button>
+    </view>
+
     <view class="photo" @click="choosePhoto">
       <image v-if="photoUrl" class="photo-img" :src="photoUrl" mode="aspectFill" />
       <text v-if="!photoUrl" class="muted">{{ uploading ? '上传中…' : '点击添加照片' }}</text>
@@ -8,6 +14,7 @@
     <wd-cell-group border>
       <wd-input v-model="form.name" label="菜名" placeholder="比如：可乐鸡翅" clearable />
       <wd-picker v-model="form.category" label="分类" :columns="categoryColumns" />
+      <wd-picker v-if="subColumns.length" v-model="subModel" label="二级分类" :columns="subColumns" />
       <view class="manage" @click="goCategories">管理分类</view>
       <wd-input v-model="minutesText" label="用时" type="number" placeholder="分钟" />
       <wd-input v-model="tagsText" label="标签" placeholder="用空格分隔，如：甜口 快手菜" />
@@ -31,7 +38,7 @@
 <script setup lang="ts">
 import { onLoad } from '@dcloudio/uni-app'
 import { storeToRefs } from 'pinia'
-import { computed, reactive, ref } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 
 import { errorMessage, menuCo } from '@/api/menu'
 import { useSessionStore } from '@/stores/session'
@@ -43,10 +50,26 @@ const categoryColumns = computed(() =>
   (family.value?.categories ?? []).map((c) => ({ value: c.id, label: c.name }))
 )
 
+const NO_SUB = '_none'
+/** 当前一级分类下的二级分类选项；该分类没有二级分类时为空，不显示选择器 */
+const subColumns = computed(() => {
+  const subs = family.value?.categories.find((c) => c.id === form.category)?.subs ?? []
+  return subs.length
+    ? [{ value: NO_SUB, label: '不细分' }, ...subs.map((s) => ({ value: s.id, label: s.name }))]
+    : []
+})
+const subModel = computed({
+  get: () => form.subCategory || NO_SUB,
+  set: (v: string) => {
+    form.subCategory = v === NO_SUB ? '' : v
+  },
+})
+
 const form = reactive<DishInput>({
   name: '',
   photo: '',
   category: family.value?.categories[0]?.id ?? 'other',
+  subCategory: '',
   tags: [],
   ingredients: [],
   steps: [],
@@ -58,6 +81,13 @@ const ingredientsText = ref('')
 const stepsText = ref('')
 const saving = ref(false)
 const uploading = ref(false)
+const quickText = ref('')
+const drafting = ref(false)
+
+// 换了一级分类后，原来的二级分类不再适用就清掉
+watch(subColumns, (cols) => {
+  if (form.subCategory && !cols.some((c) => c.value === form.subCategory)) form.subCategory = ''
+})
 
 onLoad(async (query) => {
   const id = query?.id ? String(query.id) : ''
@@ -69,6 +99,7 @@ onLoad(async (query) => {
       name: dish.name,
       photo: dish.photo ?? '',
       category: dish.category,
+      subCategory: dish.subCategory ?? '',
     })
     minutesText.value = dish.minutes ? String(dish.minutes) : ''
     tagsText.value = dish.tags.join(' ')
@@ -84,6 +115,30 @@ function lines(text: string): string[] {
     .split('\n')
     .map((l) => l.trim())
     .filter(Boolean)
+}
+
+/** 让 AI 生成草稿并填进表单，不直接保存，用户检查后点「保存」 */
+async function draft(): Promise<void> {
+  if (!quickText.value.trim()) {
+    uni.showToast({ title: '先写个菜名', icon: 'none' })
+    return
+  }
+  drafting.value = true
+  try {
+    const d = await menuCo().draftDish(quickText.value.trim())
+    form.name = d.name
+    form.category = d.category
+    form.subCategory = d.subCategory ?? ''
+    minutesText.value = d.minutes ? String(d.minutes) : ''
+    tagsText.value = d.tags.join(' ')
+    ingredientsText.value = d.ingredients.map((i) => `${i.name} ${i.qty}`.trim()).join('\n')
+    stepsText.value = d.steps.join('\n')
+    uni.showToast({ title: '已填好，检查后保存', icon: 'none' })
+  } catch (err) {
+    uni.showToast({ title: errorMessage(err), icon: 'none' })
+  } finally {
+    drafting.value = false
+  }
 }
 
 function goCategories(): void {
@@ -148,6 +203,12 @@ async function remove(): Promise<void> {
 </script>
 
 <style lang="scss" scoped>
+.quick {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
 .photo {
   display: flex;
   align-items: center;

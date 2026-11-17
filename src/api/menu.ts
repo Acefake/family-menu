@@ -6,7 +6,9 @@ interface MenuCo {
   getFamily(): Promise<Family | null>
   createFamily(name: string): Promise<Family>
   joinFamily(inviteCode: string): Promise<Family>
-  saveCategories(list: { id?: string; name: string }[]): Promise<Category[]>
+  saveCategories(
+    list: { id?: string; name: string; subs?: { id?: string; name: string }[] }[]
+  ): Promise<Category[]>
   leaveFamily(): Promise<void>
   previewInvite(inviteCode: string): Promise<{ name: string; memberCount: number } | null>
   setNickname(nickname: string): Promise<Family>
@@ -14,6 +16,11 @@ interface MenuCo {
   importHomeDishes(): Promise<number>
   getDish(id: string): Promise<Dish>
   saveDish(dish: DishInput): Promise<string>
+  draftDish(
+    input: string
+  ): Promise<
+    Pick<DishInput, 'name' | 'category' | 'subCategory' | 'minutes' | 'tags' | 'ingredients' | 'steps'>
+  >
   removeDish(id: string): Promise<void>
   getSlot(date: string, meal: Meal): Promise<Slot>
   listSlots(from: string, to: string): Promise<Slot[]>

@@ -1,7 +1,7 @@
 'use strict'
 
 const { createHash } = require('crypto')
-const { code2Session, createToken, loadConfig, verifyToken } = require('fm-common')
+const { askJson, code2Session, createToken, loadConfig, verifyToken } = require('fm-common')
 const homeDishes = require('./home-dishes.json')
 
 const db = uniCloud.database()
@@ -13,13 +13,28 @@ const menus = db.collection('fm-menu')
 
 const MEALS = ['breakfast', 'lunch', 'dinner']
 const DEFAULT_CATEGORIES = [
-  { id: 'meat', name: '荤菜' },
+  {
+    id: 'meat',
+    name: '荤菜',
+    subs: [
+      { id: 'pork', name: '猪肉' },
+      { id: 'beef', name: '牛羊' },
+      { id: 'poultry', name: '鸡鸭' },
+    ],
+  },
   { id: 'veg', name: '素菜' },
   { id: 'soup', name: '汤' },
   { id: 'staple', name: '主食' },
   { id: 'other', name: '其他' },
 ]
 const MAX_CATEGORIES = 12
+const MAX_SUBS = 8
+/** 默认「荤菜」子类的食材关键词，导入家常菜和 AI 草稿时据此猜二级分类 */
+const SUB_KEYWORDS = [
+  ['pork', ['猪', '五花', '排骨', '肉末', '肉丝', '肉片', '梅花肉', '里脊', '火腿', '培根']],
+  ['beef', ['牛', '羊']],
+  ['poultry', ['鸡', '鸭', '鹅']],
+]
 const FALLBACK_CATEGORY = 'other'
 const CODE_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'
 const PUBLIC_METHODS = ['login']
@@ -73,6 +88,21 @@ function fallbackCategoryId(categories) {
 
 function resolveCategory(categories, id) {
   return categories.some((c) => c.id === id) ? id : fallbackCategoryId(categories)
+}
+
+/** 二级分类必须属于所选的一级分类，否则当作没分 */
+function resolveSub(categories, categoryId, subId) {
+  const category = categories.find((c) => c.id === categoryId)
+  return category && Array.isArray(category.subs) && category.subs.some((s) => s.id === subId) ? subId : ''
+}
+
+/** 按菜名和食材猜二级分类；家庭没有对应的默认子类时返回空 */
+function guessSub(categories, categoryId, recipe) {
+  const haystack = [recipe.name, ...(recipe.ingredients || []).map((i) => i.name)].join(' ')
+  for (const [subId, words] of SUB_KEYWORDS) {
+    if (words.some((w) => haystack.includes(w))) return resolveSub(categories, categoryId, subId)
+  }
+  return ''
 }
 
 async function loadFamilyDoc(familyId) {
@@ -184,9 +214,11 @@ async function addHomeDish(familyId, categories, { key, ...recipe }) {
   if (!id) return false
   const now = Date.now()
   try {
+    const category = resolveCategory(categories, recipe.category)
     await dishes.add({
       ...recipe,
-      category: resolveCategory(categories, recipe.category),
+      category,
+      subCategory: guessSub(categories, category, recipe),
       _id: id,
       familyId,
       homeTemplate: true,
@@ -284,23 +316,48 @@ module.exports = {
     const family = await loadFamilyDoc(familyId)
     const before = categoriesOf(family)
     const known = new Set(before.map((c) => c.id))
+    const knownSubs = new Map(before.map((c) => [c.id, new Set((c.subs || []).map((s) => s.id))]))
+    const newId = (prefix, ...parts) =>
+      `${prefix}${createHash('sha256').update(parts.join(':')).digest('hex').slice(0, 10)}`
     const seenNames = new Set()
-    const next = list.map((item) => {
+    const next = list.map((item, index) => {
       const name = text(item && item.name, 6, '分类名')
       if (seenNames.has(name)) throw fail(`分类「${name}」重复了`)
       seenNames.add(name)
-      const id =
-        item.id && known.has(item.id)
-          ? item.id
-          : `c${createHash('sha256').update(`${familyId}:${name}:${Date.now()}`).digest('hex').slice(0, 10)}`
-      return { id, name }
+      const id = item.id && known.has(item.id) ? item.id : newId('c', familyId, name, Date.now(), index)
+
+      const rawSubs = Array.isArray(item.subs) ? item.subs : []
+      if (rawSubs.length > MAX_SUBS) throw fail(`「${name}」下的二级分类最多 ${MAX_SUBS} 个`)
+      const seenSubNames = new Set()
+      const subs = rawSubs.map((sub, subIndex) => {
+        const subName = text(sub && sub.name, 6, '二级分类名')
+        if (seenSubNames.has(subName)) throw fail(`「${name}」下的「${subName}」重复了`)
+        seenSubNames.add(subName)
+        const subId =
+          sub.id && knownSubs.get(id)?.has(sub.id)
+            ? sub.id
+            : newId('s', familyId, id, subName, Date.now(), subIndex)
+        return { id: subId, name: subName }
+      })
+      return subs.length ? { id, name, subs } : { id, name }
     })
+
     const nextIds = new Set(next.map((c) => c.id))
     const removed = before.filter((c) => !nextIds.has(c.id)).map((c) => c.id)
     if (removed.length) {
       await dishes
         .where({ familyId, category: dbCmd.in(removed) })
-        .update({ category: fallbackCategoryId(next) })
+        .update({ category: fallbackCategoryId(next), subCategory: '' })
+    }
+    // 删掉的二级分类：里面的菜回到「该一级分类下未细分」
+    for (const c of next) {
+      const kept = new Set((c.subs || []).map((s) => s.id))
+      const gone = [...(knownSubs.get(c.id) || [])].filter((id) => !kept.has(id))
+      if (gone.length) {
+        await dishes
+          .where({ familyId, category: c.id, subCategory: dbCmd.in(gone) })
+          .update({ subCategory: '' })
+      }
     }
     await families.doc(familyId).update({ categories: dbCmd.set(next) })
     return next
@@ -356,10 +413,12 @@ module.exports = {
     const familyId = familyIdOf(this.user)
     if (!input || typeof input !== 'object') throw fail('参数无效')
     const categories = categoriesOf(await loadFamilyDoc(familyId))
+    const category = resolveCategory(categories, input.category)
     const doc = {
       name: text(input.name, 30, '菜名'),
       photo: typeof input.photo === 'string' ? input.photo.slice(0, 500) : '',
-      category: resolveCategory(categories, input.category),
+      category,
+      subCategory: resolveSub(categories, category, input.subCategory),
       tags: (Array.isArray(input.tags) ? input.tags : []).map(String).slice(0, 10),
       minutes: Number(input.minutes) > 0 ? Math.min(Math.round(Number(input.minutes)), 1440) : null,
       ingredients: (Array.isArray(input.ingredients) ? input.ingredients : [])
@@ -387,6 +446,50 @@ module.exports = {
     return res.id
   },
 
+  /**
+   * 快捷录入：根据一句话（菜名或一段做法）让 AI 生成菜谱草稿，只返回不入库，
+   * 前端填进表单让用户检查后再保存。
+   */
+  async draftDish(input) {
+    const categories = categoriesOf(await loadFamilyDoc(familyIdOf(this.user)))
+    const content = text(input, 800, '内容')
+    const system =
+      '你是家常菜谱助手。根据用户给的菜名或做法，输出一道家常菜的 JSON，不要输出其他文字。' +
+      '字段：name 菜名；category 只能从下面的分类 id 里选一个；subCategory 是所选分类下的二级分类 id，没有合适的就省略；minutes 总用时（分钟，整数，不确定就省略）；' +
+      'tags 口味或特点标签，最多 4 个，每个不超过 4 字；ingredients 数组，每项 {name, qty}，qty 带单位如"2个"，不确定写空字符串；' +
+      'steps 字符串数组，每步一句话。用户给了做法就按原意整理，没给就按通行的家常做法写。' +
+      `分类：${categories
+        .map(
+          (c) =>
+            `${c.id}=${c.name}${c.subs?.length ? `（二级：${c.subs.map((s) => `${s.id}=${s.name}`).join('，')}）` : ''}`
+        )
+        .join('；')}`
+    const draft = await askJson(this.config, system, content)
+    if (!draft || typeof draft.name !== 'string' || !draft.name.trim())
+      throw fail('没识别出菜名，换个说法试试')
+    const category = resolveCategory(categories, draft.category)
+    const recipe = {
+      name: draft.name.trim().slice(0, 30),
+      ingredients: (Array.isArray(draft.ingredients) ? draft.ingredients : [])
+        .slice(0, 30)
+        .map((i) => ({
+          name: String((i && i.name) || '').slice(0, 20),
+          qty: String((i && i.qty) || '').slice(0, 20),
+        }))
+        .filter((i) => i.name),
+    }
+    return {
+      name: recipe.name,
+      category,
+      subCategory:
+        resolveSub(categories, category, draft.subCategory) || guessSub(categories, category, recipe),
+      minutes: Number(draft.minutes) > 0 ? Math.min(Math.round(Number(draft.minutes)), 1440) : null,
+      tags: names(draft.tags, 4, 6),
+      ingredients: recipe.ingredients,
+      steps: names(draft.steps, 20, 200),
+    }
+  },
+
   async removeDish(id) {
     const query = dishes.where({ _id: text(id, 64, 'id'), familyId: familyIdOf(this.user) })
     const { data } = await query.get()
@@ -401,6 +504,7 @@ module.exports = {
       name: '',
       photo: dbCmd.remove(),
       category: dbCmd.remove(),
+      subCategory: dbCmd.remove(),
       tags: dbCmd.remove(),
       minutes: dbCmd.remove(),
       ingredients: dbCmd.remove(),

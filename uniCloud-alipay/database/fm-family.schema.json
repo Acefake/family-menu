@@ -46,6 +46,22 @@
           "name": {
             "bsonType": "string",
             "maxLength": 6
+          },
+          "subs": {
+            "bsonType": "array",
+            "description": "二级分类，每项 { id, name }，最多 8 个",
+            "items": {
+              "bsonType": "object",
+              "properties": {
+                "id": {
+                  "bsonType": "string"
+                },
+                "name": {
+                  "bsonType": "string",
+                  "maxLength": 6
+                }
+              }
+            }
           }
         }
       }
