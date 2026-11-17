@@ -21,6 +21,7 @@ interface MenuCo {
   ): Promise<
     Pick<DishInput, 'name' | 'category' | 'subCategory' | 'minutes' | 'tags' | 'ingredients' | 'steps'>
   >
+  generateDishImage(input: { name: string; ingredients?: string[] }): Promise<string>
   removeDish(id: string): Promise<void>
   getSlot(date: string, meal: Meal): Promise<Slot>
   listSlots(from: string, to: string): Promise<Slot[]>

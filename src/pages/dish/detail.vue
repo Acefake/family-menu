@@ -105,7 +105,8 @@ function edit(): void {
 <style lang="scss" scoped>
 .dish-photo {
   width: 100% !important;
-  height: 280px !important;
+  height: auto !important;
+  aspect-ratio: 1 / 1;
   border-radius: 0 !important;
 }
 

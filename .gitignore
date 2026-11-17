@@ -14,3 +14,6 @@ unpackage
 
 # 云函数密钥配置（复制 config.example.json 后填写）
 uniCloud-alipay/cloudfunctions/common/fm-common/config.json
+
+# 设计稿临时目录
+.mockups/

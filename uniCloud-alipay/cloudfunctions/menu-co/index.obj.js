@@ -1,7 +1,7 @@
 'use strict'
 
 const { createHash } = require('crypto')
-const { askJson, code2Session, createToken, loadConfig, verifyToken } = require('fm-common')
+const { askJson, code2Session, createToken, generateImage, loadConfig, verifyToken } = require('fm-common')
 const homeDishes = require('./home-dishes.json')
 
 const db = uniCloud.database()
@@ -488,6 +488,23 @@ module.exports = {
       ingredients: recipe.ingredients,
       steps: names(draft.steps, 20, 200),
     }
+  },
+
+  /**
+   * 给菜生成一张配图并存进云存储，只返回 fileID 不改菜品；前端预览后随「保存」写进 photo。
+   * 用户没保存的话这张图会留在云存储里，数量有限，暂不清理。
+   */
+  async generateDishImage(input) {
+    const familyId = familyIdOf(this.user)
+    const name = text(input && input.name, 30, '菜名')
+    const main = names(input && input.ingredients, 5, 20)
+    // 画面主体只有这一道菜：写清楚盛器、机位、光线，并排除文字和人物，生图模型才不容易跑偏
+    const prompt =
+      `${name}，中国家常菜成品的美食摄影特写${main.length ? `，可见食材：${main.join('、')}` : ''}。` +
+      '一盘菜居中，白色瓷盘，45度俯拍，柔和的自然侧光，浅景深，原木桌面背景，' +
+      '色泽油润诱人，热气微升，真实照片质感，高清细节，方形构图。' +
+      '画面中没有文字、没有水印、没有人物和手。'
+    return generateImage(this.config, prompt, `dish/ai/${familyId}`)
   },
 
   async removeDish(id) {

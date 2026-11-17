@@ -61,14 +61,21 @@ async function code2Session(code, config) {
 
 const AI_DEFAULT_URL = 'https://open.bigmodel.cn/api/paas/v4/chat/completions'
 const AI_DEFAULT_MODEL = 'glm-4-flash'
+const AI_IMAGE_URL = 'https://open.bigmodel.cn/api/paas/v4/images/generations'
+const AI_IMAGE_MODEL = 'cogview-3-flash'
+
+function requireAi(config) {
+  const ai = config.ai || {}
+  if (!ai.apiKey) throw new Error('未配置 AI：请在 config.json 填写 ai.apiKey')
+  return ai
+}
 
 /**
  * 调用 OpenAI 兼容的对话接口（默认智谱 glm-4-flash，免费），返回解析后的 JSON 对象。
  * 配置见 config.json 的 ai.apiKey / ai.model / ai.baseUrl。
  */
 async function askJson(config, system, user) {
-  const ai = config.ai || {}
-  if (!ai.apiKey) throw new Error('未配置 AI：请在 config.json 填写 ai.apiKey')
+  const ai = requireAi(config)
   const res = await uniCloud.httpclient.request(ai.baseUrl || AI_DEFAULT_URL, {
     method: 'POST',
     contentType: 'json',
@@ -96,4 +103,36 @@ async function askJson(config, system, user) {
   return JSON.parse(match[0])
 }
 
-module.exports = { loadConfig, createToken, verifyToken, code2Session, askJson }
+/**
+ * 按提示词生成一张图（默认智谱 cogview-3-flash），下载后存进云存储，返回 fileID。
+ * 接口给的是会过期的临时链接，所以必须转存。配置见 ai.apiKey / ai.imageModel / ai.imageUrl。
+ */
+async function generateImage(config, prompt, cloudDir) {
+  const ai = requireAi(config)
+  const res = await uniCloud.httpclient.request(ai.imageUrl || AI_IMAGE_URL, {
+    method: 'POST',
+    contentType: 'json',
+    dataType: 'json',
+    timeout: 30000,
+    headers: { Authorization: `Bearer ${ai.apiKey}` },
+    data: { model: ai.imageModel || AI_IMAGE_MODEL, prompt, size: '1024x1024' },
+  })
+  const url = res.data && res.data.data && res.data.data[0] && res.data.data[0].url
+  if (!url) {
+    throw new Error(`AI 生图失败：${(res.data && res.data.error && res.data.error.message) || res.status}`)
+  }
+  // 不设 dataType，返回的 data 是 Buffer
+  const file = await uniCloud.httpclient.request(url, { timeout: 10000, followRedirect: true })
+  if (file.status !== 200 || !Buffer.isBuffer(file.data) || !file.data.length) {
+    throw new Error(`下载生成的图片失败：${file.status}`)
+  }
+  const type = String((file.headers && file.headers['content-type']) || '')
+  const ext = type.includes('jpeg') ? 'jpg' : type.includes('webp') ? 'webp' : 'png'
+  const { fileID } = await uniCloud.uploadFile({
+    cloudPath: `${cloudDir}/${Date.now()}.${ext}`,
+    fileContent: file.data,
+  })
+  return fileID
+}
+
+module.exports = { loadConfig, createToken, verifyToken, code2Session, askJson, generateImage }

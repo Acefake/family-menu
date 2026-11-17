@@ -52,7 +52,7 @@ pnpm check        # typecheck + eslint + prettier
 3. 复制 `uniCloud-alipay/cloudfunctions/common/fm-common/config.example.json` 为同目录 `config.json`，填写：
    - `weixin.appid` / `weixin.appsecret`：微信公众平台 → 开发管理 → 开发设置
    - `tokenSecret`：一串随机字符串（≥16 位）
-   - `ai.apiKey`（可选，快捷录入菜谱用）：[智谱开放平台](https://bigmodel.cn) 注册后创建 API Key，`glm-4-flash` 免费
+   - `ai.apiKey`（可选，快捷录入菜谱、AI 生成菜品图片用）：[智谱开放平台](https://bigmodel.cn) 注册后创建 API Key，`glm-4-flash`（文字）和 `cogview-3-flash`（图片）目前免费，以平台当前定价为准；可用 `ai.model` / `ai.imageModel` 换模型（免费的 `cogview-3-flash` 出图质量一般，想要更好的可换 `cogview-4-250304`，需付费，先看平台定价）
      `config.json` 已被 gitignore，不要提交。
 4. 右键 `common/fm-common` → 上传公共模块；右键 `menu-co` → 管理公共模块依赖确认包含 fm-common → 上传部署。
 5. 右键 `database` → 初始化云数据库（创建 4 张表及索引）。
