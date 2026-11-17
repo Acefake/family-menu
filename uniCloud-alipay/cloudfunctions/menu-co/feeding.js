@@ -165,6 +165,10 @@ function feedingMethods(db) {
         const food = foods.find((entry) => entry.id === id)
         if (!food) throw invalid('食物记录不存在')
         food.logs = food.logs.filter((log) => log.date !== day)
+        if (!food.logs.length) {
+          foods.splice(foods.indexOf(food), 1)
+          return
+        }
         refreshStatus(food, foods)
       })
     },

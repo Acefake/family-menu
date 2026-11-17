@@ -88,6 +88,15 @@ test('删除记录重新计算进度，保留家庭隔离与医生确认，不�
   assert.equal((await call('a', 'listFeeding')).find((f) => f.id === id).logs.length, 1)
 })
 
+test('删除最后一条打卡同步移除食物档案，允许重新添加', async () => {
+  const { call } = fixture()
+  const id = await call('a', 'createFeeding', input)
+  await call('a', 'saveFeedingLog', id, log('2026-01-01'))
+  await call('a', 'deleteFeedingLog', id, '2026-01-01')
+  assert.deepEqual(await call('a', 'listFeeding'), [])
+  await call('a', 'createFeeding', input)
+})
+
 test('每天一次打卡，重复保存覆盖；完成实际观察天数后归入无异常', async () => {
   const { call } = fixture()
   const id = await call('a', 'createFeeding', input)
