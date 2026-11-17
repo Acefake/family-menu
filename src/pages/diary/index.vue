@@ -26,6 +26,10 @@
           <view class="entry-head">
             <text class="entry-meal">{{ e.meal }}</text>
             <text v-if="e.people" class="muted">{{ e.people }}</text>
+            <view class="entry-actions">
+              <text class="act" @click="edit(e)">编辑</text>
+              <text class="act danger" @click="remove(e)">删除</text>
+            </view>
           </view>
           <image v-if="photoUrls[e.photo]" class="entry-photo" :src="photoUrls[e.photo]" mode="aspectFill" />
           <view class="entry-dishes">
@@ -44,7 +48,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 
-import { menuCo } from '@/api/menu'
+import { errorMessage, menuCo } from '@/api/menu'
 import DishThumb from '@/components/DishThumb.vue'
 import EmptyState from '@/components/EmptyState.vue'
 import StateView from '@/components/StateView.vue'
@@ -70,6 +74,8 @@ const entries = computed(() => {
     .sort((a, b) => b.date.localeCompare(a.date) || MEAL_ORDER.indexOf(a.meal) - MEAL_ORDER.indexOf(b.meal))
     .map((s) => ({
       id: s._id ?? `${s.date}-${s.meal}`,
+      date: s.date,
+      mealKey: s.meal,
       month: Number(s.date.slice(5, 7)),
       day: s.date.slice(8, 10),
       meal: MEAL_LABEL[s.meal],
@@ -110,6 +116,30 @@ function shift(delta: number): void {
   const d = new Date(y, m - 1 + delta, 1)
   month.value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
   void reload()
+}
+
+type Entry = (typeof entries.value)[number]
+
+/** 重新编辑这一顿：回到「记下这餐」页，带着当时记的内容 */
+function edit(e: Entry): void {
+  uni.navigateTo({ url: `/pages/serve/index?date=${e.date}&meal=${e.mealKey}` })
+}
+
+/** 删除这条记录：这顿回到「已确认」，点过的菜还在，可以再记一次 */
+async function remove(e: Entry): Promise<void> {
+  const { confirm } = await uni.showModal({
+    title: '删除这条记录？',
+    content: '这顿会回到「已确认」，点过的菜还在，之后可以重新记；菜谱里的“吃过几次”也会退回。',
+    confirmText: '删除',
+  })
+  if (!confirm) return
+  try {
+    await menuCo().deleteServed(e.date, e.mealKey)
+    uni.showToast({ title: '已删除', icon: 'success' })
+    await reload()
+  } catch (err) {
+    uni.showToast({ title: errorMessage(err), icon: 'none' })
+  }
 }
 
 function openDish(id: string): void {
@@ -180,6 +210,21 @@ function openDish(id: string): void {
 
 .entry-meal {
   font-weight: 600;
+}
+
+.entry-actions {
+  display: flex;
+  gap: var(--space-3);
+  margin-left: auto;
+}
+
+.act {
+  color: var(--c-accent);
+  font-size: 13px;
+
+  &.danger {
+    color: var(--c-danger);
+  }
 }
 
 .entry-photo {

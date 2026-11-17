@@ -1,31 +1,47 @@
 <template>
   <view class="with-tabbar">
-    <view class="hero">
-      <view class="profile">
-        <view class="avatar">
-          <image v-if="myAvatar" class="avatar-image" :src="myAvatar" mode="aspectFill" />
-          <text v-else>{{ initial(family ? myName : '家') }}</text>
-        </view>
-        <view class="profile-main">
-          <view class="profile-name">{{ family ? myName : '欢迎来到家庭菜单' }}</view>
-          <view v-if="family" class="profile-family"
-            >{{ family.name }} · {{ members.length }} 位家人</view
-          >
-        </view>
-      </view>
-    </view>
+    <NavHero
+      :title="family ? myName : '欢迎来到家庭菜单'"
+      art="house"
+      :scroll="scrollTop"
+      :refreshing="refreshing"
+    >
+      <template #lead>
+        <button class="profile-avatar" :disabled="!family" aria-label="编辑头像" @click="openAvatarPicker">
+          <view class="avatar profile">
+            <AvatarPortrait
+              v-if="myAvatar"
+              class="avatar-image"
+              :src="myAvatar"
+              :size="84"
+              :fallback="initial(myName)"
+            />
+            <text v-else>{{ initial(family ? myName : '家') }}</text>
+          </view>
+          <view v-if="family" class="edit-badge"
+            ><image src="/static/illus/avatar-edit.svg" class="edit-icon"
+          /></view>
+        </button>
+      </template>
+    </NavHero>
 
     <view class="sheet">
       <StateView :loading="loading" :error="error" @retry="reload">
         <template v-if="family">
           <view class="family-card">
+            <view class="manage" @click="go('/pages/family/index')">家庭管理 ›</view>
             <view class="family-top">
               <view class="family-info">
                 <view class="family-label">家人 · {{ members.length }} 位</view>
                 <view class="members">
                   <view v-for="m in members" :key="m.uid ?? 'default-baby'" class="member">
                     <view class="avatar sm">
-                      <image v-if="m.avatar" class="avatar-image" :src="m.avatar" mode="aspectFill" />
+                      <AvatarPortrait
+                        v-if="m.avatar"
+                        class="avatar-image"
+                        :src="m.avatar"
+                        :fallback="initial(m.nickname)"
+                      />
                       <text v-else>{{ initial(m.nickname) }}</text>
                     </view>
                     <text class="member-name">{{ m.uid === uid ? '我' : m.nickname }}</text>
@@ -47,28 +63,15 @@
           </view>
 
           <view class="rows">
-            <view class="line hairline" @click="go('/pages/diary/index')">
-              <text class="line-main">饮食日记</text>
-              <text class="value">本月 {{ servedCount }} 餐</text>
-              <text class="chev">›</text>
+            <view class="setting-row hairline" @click="go('/pages/diary/index')">
+              <text class="setting-label">饮食日记</text>
+              <text class="setting-value">本月 {{ servedCount }} 餐</text>
+              <text class="setting-chev">›</text>
             </view>
-            <view class="line hairline" @click="go('/pages/categories/index')">
-              <text class="line-main">菜品分类</text>
-              <text class="value">{{ family.categories.length }} 个</text>
-              <text class="chev">›</text>
-            </view>
-            <view class="line hairline">
-              <text class="line-main">我的称呼</text>
-              <input
-                v-model="nickname"
-                class="setting-input"
-                placeholder="比如：妈妈"
-                maxlength="12"
-                @blur="saveNickname"
-              />
-            </view>
-            <view class="line hairline" @click="leave">
-              <text class="line-main danger">退出这个家庭</text>
+            <view class="setting-row hairline" @click="go('/pages/categories/index')">
+              <text class="setting-label">菜品分类</text>
+              <text class="setting-value">{{ family.categories.length }} 个</text>
+              <text class="setting-chev">›</text>
             </view>
           </view>
         </template>
@@ -103,6 +106,12 @@
         </view>
       </StateView>
     </view>
+    <AvatarPicker
+      v-if="avatarPickerOpen"
+      :member="myMember"
+      @close="avatarPickerOpen = false"
+      @saved="onAvatarSaved"
+    />
   </view>
 </template>
 
@@ -113,44 +122,58 @@ import { computed, ref, watch } from 'vue'
 
 import { errorMessage, menuCo } from '@/api/menu'
 import EmptyState from '@/components/EmptyState.vue'
+import NavHero from '@/components/NavHero.vue'
 import StateView from '@/components/StateView.vue'
 import { usePageData } from '@/composables/use-page-data'
+import { useScrollTop } from '@/composables/use-scroll-top'
 import { useTabBar } from '@/composables/use-tab-bar'
 import { useSessionStore } from '@/stores/session'
 import { today } from '@/utils/date'
 
+import { avatarFor } from './avatars'
+import AvatarPicker from './AvatarPicker.vue'
+import AvatarPortrait from './AvatarPortrait.vue'
+import type { Family } from '@/types/models'
+
 useTabBar(3)
+const scrollTop = useScrollTop()
 
 const session = useSessionStore()
 const { family, uid } = storeToRefs(session)
 const newName = ref('')
 const code = ref('')
-const nickname = ref('')
 const servedCount = ref(0)
 const sharedCode = ref('')
 const invite = ref<{ name: string; memberCount: number } | null>(null)
 
 const myName = computed(() => family.value?.members.find((m) => m.uid === uid.value)?.nickname ?? '家人')
-const myAvatar = computed(() => avatarFor(myName.value))
+const myMember = computed(() => family.value?.members.find((m) => m.uid === uid.value))
+const myAvatar = computed(
+  () => myMember.value?.avatarImage || avatarFor(myName.value, myMember.value?.avatarId)
+)
+const avatarPickerOpen = ref(false)
+/** 点击头像编辑自己的资料。 */
+function openAvatarPicker(): void {
+  if (family.value) avatarPickerOpen.value = true
+}
+
+function onAvatarSaved(value: Family): void {
+  session.family = value
+  avatarPickerOpen.value = false
+}
 const babyName = '小莲花'
 const babyAvatar = '/static/avatars/baby.png'
 const members = computed(() => {
   if (!family.value) return []
-  const people = family.value.members.map((member) => ({ ...member, avatar: avatarFor(member.nickname) }))
+  const people = family.value.members.map((member) => ({
+    ...member,
+    avatar: member.avatarImage || avatarFor(member.nickname, member.avatarId),
+  }))
   if (people.some((member) => member.avatar === babyAvatar)) return people
   return [...people, { uid: null, nickname: babyName, avatar: babyAvatar }]
 })
 
-const portraits = [
-  { suffix: /(?:姥姥|外婆|奶奶|祖母|阿嬷)$/, src: '/static/avatars/grandma.png' },
-  { suffix: /(?:姥爷|外公|爷爷|祖父|阿公)$/, src: '/static/avatars/grandpa.png' },
-  { suffix: /(?:妈妈|妈咪|母亲|宝妈)$/, src: '/static/avatars/mom.png' },
-  { suffix: /(?:爸爸|爹爹|爹地|父亲|宝爸)$/, src: '/static/avatars/dad.png' },
-  { suffix: /(?:宝宝|宝贝|婴儿|女宝)$/, src: babyAvatar },
-]
-
-const { loading, error, noFamily, reload } = usePageData(async () => {
-  nickname.value = myName.value
+const { loading, error, noFamily, refreshing, reload } = usePageData(async () => {
   servedCount.value = (await menuCo().listServed(today().slice(0, 7))).length
 })
 
@@ -185,14 +208,6 @@ onLoad((query) => {
   code.value = sharedCode.value
 })
 
-/** 按称呼结尾匹配亲属关系，例如「小满妈妈」和「奶奶（杭州）」。 */
-function avatarFor(name: string): string {
-  const title = name.trim().replace(/\s*[(（][^()（）]*[)）]$/, '')
-  if (title === babyName) return babyAvatar
-  const portrait = portraits.find(({ suffix }) => suffix.test(title))
-  return portrait?.src ?? ''
-}
-
 function initial(name: string): string {
   return Array.from(name.trim())[0] ?? '家'
 }
@@ -214,22 +229,6 @@ function join(): Promise<void> {
   return run(() => menuCo().joinFamily(code.value.trim().toUpperCase()))
 }
 
-function saveNickname(): Promise<void> {
-  const name = nickname.value.trim()
-  if (!name || name === myName.value) return Promise.resolve()
-  return run(() => menuCo().setNickname(name))
-}
-
-async function leave(): Promise<void> {
-  const { confirm } = await uni.showModal({
-    title: '退出这个家庭？',
-    content: '菜谱和记录都会留在家庭里，之后用邀请码还能再加入',
-    confirmText: '退出',
-  })
-  if (!confirm) return
-  await run(() => menuCo().leaveFamily())
-}
-
 function copyCode(): void {
   if (family.value) uni.setClipboardData({ data: family.value.inviteCode })
 }
@@ -245,13 +244,38 @@ onShareAppMessage(() => ({
 </script>
 
 <style lang="scss" scoped>
-.profile {
-  display: flex;
-  gap: var(--space-4);
-  align-items: center;
-  padding: var(--space-6) 0 var(--space-2);
+.profile-avatar {
+  position: relative;
+  padding: 0;
+  margin: 0 4px 0 0;
+  overflow: visible;
+  background: transparent;
+  line-height: 1;
 }
-
+.profile-avatar::after {
+  border: 0;
+}
+.profile-avatar .profile {
+  width: 84px;
+  height: 84px;
+}
+.edit-badge {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  background: var(--c-accent);
+  border: 1.5px solid var(--c-surface);
+  border-radius: 50%;
+}
+.edit-icon {
+  width: 10px;
+  height: 10px;
+}
 .avatar {
   display: flex;
   flex-shrink: 0;
@@ -289,18 +313,8 @@ onShareAppMessage(() => ({
   border-radius: 50%;
 }
 
-.profile-name {
-  font-family: var(--font-serif);
-  font-size: 22px;
-  font-weight: 700;
-}
-
-.profile-family {
-  color: rgba(255, 255, 255, 0.78);
-  font-size: 13px;
-}
-
 .family-card {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
@@ -332,6 +346,23 @@ onShareAppMessage(() => ({
   flex-shrink: 0;
   width: 104px;
   height: 78px;
+  margin-top: var(--space-4);
+}
+
+/* 家庭卡片右上角的入口，进到家庭管理改称呼、选 AI、退出家庭 */
+.manage {
+  position: absolute;
+  top: var(--space-3);
+  right: var(--space-3);
+  padding: 2px 10px;
+  color: var(--c-accent);
+  font-size: 13px;
+  background: var(--c-surface);
+  border-radius: var(--radius-pill);
+
+  &:active {
+    opacity: 0.7;
+  }
 }
 
 .members {
@@ -382,45 +413,6 @@ onShareAppMessage(() => ({
   padding: 0 var(--space-1);
 }
 
-.line {
-  display: flex;
-  gap: var(--space-3);
-  align-items: center;
-  min-height: 52px;
-  background: transparent;
-
-  &:active {
-    opacity: 0.7;
-  }
-}
-
-.line-main {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-
-  &.strong {
-    color: var(--c-accent);
-    font-weight: 600;
-  }
-
-  &.danger {
-    color: var(--c-danger);
-  }
-}
-
-.value {
-  color: var(--c-text-2);
-  font-size: 14px;
-}
-
-.chev {
-  color: var(--c-line-strong);
-  font-size: 20px;
-}
-
 .code {
   font-family: var(--font-serif);
   font-size: 20px;
@@ -432,12 +424,6 @@ onShareAppMessage(() => ({
   margin-left: auto;
   color: var(--c-accent);
   font-size: 14px;
-}
-
-.setting-input {
-  flex: 1;
-  color: var(--c-text-2);
-  text-align: right;
 }
 
 .setup {

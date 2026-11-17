@@ -4,7 +4,8 @@
   right: 0;
   bottom: 0;
   left: 0;
-  padding: 0 20px calc(6px + env(safe-area-inset-bottom) * 0.3);
+  /* 底边离屏幕底部：10px + 70% 的安全区，让开 Home 指示条 */
+  padding: 0 20px calc(10px + env(safe-area-inset-bottom) * 0.7);
   pointer-events: none;
 }
 

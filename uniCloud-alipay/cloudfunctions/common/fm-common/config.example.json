@@ -6,7 +6,18 @@
   "tokenSecret": "一串足够长的随机字符串，用于签发登录令牌",
   "tokenExpiresIn": 2592000,
   "ai": {
-    "apiKey": "智谱开放平台 bigmodel.cn 的 API Key（glm-4-flash 免费）",
-    "model": "glm-4-flash"
+    "providers": {
+      "zhipu": {
+        "apiKey": "智谱开放平台 bigmodel.cn 的 API Key；不用这家就留空",
+        "model": "glm-4-flash",
+        "imageModel": "cogview-3-flash"
+      },
+      "siliconflow": {
+        "apiKey": "硅基流动 cloud.siliconflow.cn 的 API Key；不用这家就留空",
+        "model": "Qwen/Qwen2.5-7B-Instruct",
+        "imageModel": "Kwai-Kolors/Kolors"
+      }
+    },
+    "default": { "text": "zhipu", "image": "siliconflow" }
   }
 }

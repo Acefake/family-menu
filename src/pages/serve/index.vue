@@ -1,8 +1,8 @@
 <template>
   <view class="page">
     <view>
-      <view class="muted">{{ relativeDay(date) }} · {{ MEAL_LABEL[meal] }}</view>
-      <view class="page-title">记下这餐</view>
+      <view class="muted">{{ relativeDay(slotDate) }} · {{ MEAL_LABEL[slotMeal] }}</view>
+      <view class="page-title">{{ editing ? '编辑这餐' : '记下这餐' }}</view>
     </view>
 
     <StateView :loading="loading" :error="error" @retry="reload">
@@ -34,28 +34,50 @@
           </view>
         </view>
       </view>
-      <view class="muted hint">只有勾了“做了”的菜会算一次，菜谱里的“吃过几次”也跟着加。</view>
+      <view class="muted hint">{{
+        editing
+          ? '改了做了哪些菜，菜谱里的“吃过几次”会跟着增减。'
+          : '只有勾了“做了”的菜会算一次，菜谱里的“吃过几次”也跟着加。'
+      }}</view>
     </StateView>
 
     <view class="bar">
-      <view :class="['btn grow', { disabled: saving }]" @click="save">记录</view>
+      <view :class="['btn grow', { disabled: saving }]" @click="save">{{
+        editing ? '保存修改' : '记录'
+      }}</view>
     </view>
   </view>
 </template>
 
 <script setup lang="ts">
+import { onLoad } from '@dcloudio/uni-app'
 import { storeToRefs } from 'pinia'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 
 import { errorMessage, menuCo } from '@/api/menu'
 import StateView from '@/components/StateView.vue'
 import { usePageData } from '@/composables/use-page-data'
 import { useSessionStore } from '@/stores/session'
-import { type Dish, MEAL_LABEL } from '@/types/models'
+import { type Dish, MEAL_LABEL, type Meal } from '@/types/models'
 import { relativeDay } from '@/utils/date'
 import { usePhotoUrl } from '@/utils/photo'
 
 const { date, meal } = storeToRefs(useSessionStore())
+/** 从饮食日记、这顿页点「编辑」进来时，URL 里带着要改的是哪天哪顿；平时记下这餐用的是当前正在看的那一顿 */
+const editDate = ref('')
+const editMeal = ref<Meal | ''>('')
+const editing = computed(() => !!editDate.value && !!editMeal.value)
+const slotDate = computed(() => editDate.value || date.value)
+const slotMeal = computed<Meal>(() => editMeal.value || meal.value)
+
+onLoad((query) => {
+  const d = String(query?.date ?? '')
+  const m = String(query?.meal ?? '')
+  if (/^\d{4}-\d{2}-\d{2}$/.test(d) && ['breakfast', 'lunch', 'dinner'].includes(m)) {
+    editDate.value = d
+    editMeal.value = m as Meal
+  }
+})
 const rows = ref<Dish[]>([])
 const cooked = ref(new Set<string>())
 const ratings = ref<Record<string, number>>({})
@@ -64,11 +86,26 @@ const photoUrl = usePhotoUrl(() => photo.value)
 const uploading = ref(false)
 const saving = ref(false)
 
+/** 勾选、评分、照片只在第一次加载时按这一顿的内容初始化；选照片回来页面会再显示一次，不能把刚改的冲掉 */
+let initialized = false
+
 const { loading, error, reload } = usePageData(async () => {
-  const [slot, dishes] = await Promise.all([menuCo().getSlot(date.value, meal.value), menuCo().listDishes()])
+  const [slot, dishes] = await Promise.all([
+    menuCo().getSlot(slotDate.value, slotMeal.value),
+    menuCo().listDishes(),
+  ])
   const ids = new Set(slot.selections.flatMap((s) => s.dishIds))
   rows.value = dishes.filter((d) => ids.has(d._id))
-  cooked.value = new Set(rows.value.map((d) => d._id))
+  if (initialized) return
+  initialized = true
+  if (editing.value && slot.status === 'served') {
+    // 已开饭的：把当时记下的做了哪些菜、评分、整桌照带出来改
+    cooked.value = new Set(slot.cooked ?? [])
+    ratings.value = { ...slot.ratings }
+    photo.value = slot.photo ?? ''
+  } else {
+    cooked.value = new Set(rows.value.map((d) => d._id))
+  }
 })
 
 function toggle(id: string): void {
@@ -106,11 +143,14 @@ async function save(): Promise<void> {
   if (saving.value) return
   saving.value = true
   try {
-    await menuCo().serveSlot(date.value, meal.value, {
-      cookedIds: [...cooked.value],
-      ratings: ratings.value,
-      photo: photo.value,
-    })
+    const input = { cookedIds: [...cooked.value], ratings: ratings.value, photo: photo.value }
+    if (editing.value) {
+      await menuCo().updateServed(slotDate.value, slotMeal.value, input)
+      uni.showToast({ title: '已保存', icon: 'success' })
+      setTimeout(() => uni.navigateBack(), 400)
+      return
+    }
+    await menuCo().serveSlot(slotDate.value, slotMeal.value, input)
     uni.showToast({ title: '已记下', icon: 'success' })
     setTimeout(() => uni.redirectTo({ url: '/pages/diary/index' }), 400)
   } catch (err) {

@@ -9,6 +9,12 @@
     {
       "path": "pages/today/index",
       "style": {
+        "navigationStyle": "custom",
+        "enablePullDownRefresh": true,
+        "backgroundTextStyle": "light",
+        "backgroundColor": "#4a6b7f",
+        "backgroundColorTop": "#4a6b7f",
+        "backgroundColorBottom": "#ffffff",
         "navigationBarTitleText": "家庭菜单",
         "navigationBarBackgroundColor": "#4a6b7f",
         "navigationBarTextStyle": "white"
@@ -17,6 +23,7 @@
     {
       "path": "pages/dishes/index",
       "style": {
+        "navigationStyle": "custom",
         "navigationBarTitleText": "菜谱",
         "navigationBarBackgroundColor": "#4a6b7f",
         "navigationBarTextStyle": "white"
@@ -25,6 +32,12 @@
     {
       "path": "pages/shopping/index",
       "style": {
+        "navigationStyle": "custom",
+        "enablePullDownRefresh": true,
+        "backgroundTextStyle": "light",
+        "backgroundColor": "#4a6b7f",
+        "backgroundColorTop": "#4a6b7f",
+        "backgroundColorBottom": "#ffffff",
         "navigationBarTitleText": "买菜",
         "navigationBarBackgroundColor": "#4a6b7f",
         "navigationBarTextStyle": "white"
@@ -33,6 +46,12 @@
     {
       "path": "pages/mine/index",
       "style": {
+        "navigationStyle": "custom",
+        "enablePullDownRefresh": true,
+        "backgroundTextStyle": "light",
+        "backgroundColor": "#4a6b7f",
+        "backgroundColorTop": "#4a6b7f",
+        "backgroundColorBottom": "#ffffff",
         "navigationBarTitleText": "我的",
         "navigationBarBackgroundColor": "#4a6b7f",
         "navigationBarTextStyle": "white"
@@ -41,9 +60,16 @@
     {
       "path": "pages/order/index",
       "style": {
+        "navigationStyle": "custom",
         "navigationBarTitleText": "点菜",
         "navigationBarBackgroundColor": "#4a6b7f",
         "navigationBarTextStyle": "white"
+      }
+    },
+    {
+      "path": "pages/family/index",
+      "style": {
+        "navigationBarTitleText": "家庭管理"
       }
     },
     {

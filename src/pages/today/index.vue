@@ -1,8 +1,6 @@
 <template>
   <view class="with-tabbar">
-    <view class="hero">
-      <view class="hero-date">{{ dayLabel }}</view>
-      <view class="hero-title">{{ title }}</view>
+    <NavHero :title="title" :sub="dayLabel" art="bowl" :scroll="scrollTop" :refreshing="refreshing">
       <view class="meals">
         <view
           v-for="m in MEALS"
@@ -13,9 +11,9 @@
           {{ m.label }}
         </view>
       </view>
-    </view>
+    </NavHero>
 
-    <view class="sheet">
+    <view :class="['sheet', { 'has-bar': rows.length && !noFamily }]">
       <scroll-view scroll-x enhanced :show-scrollbar="false" class="strip">
         <view class="strip-inner">
           <view
@@ -39,7 +37,10 @@
             <text class="tag meal-tag">{{ MEAL_LABEL[meal] }}</text>
             <text :class="['tag', statusTone]">{{ statusText }}</text>
           </view>
-          <text v-if="rows.length" class="muted">{{ rows.length }} 道菜</text>
+          <view class="status-right">
+            <text v-if="rows.length" class="muted">{{ rows.length }} 道菜</text>
+            <text v-if="slot?.status === 'served'" class="danger-link" @click="removeServed">删除记录</text>
+          </view>
         </view>
 
         <EmptyState
@@ -86,13 +87,16 @@
     </view>
 
     <view v-if="rows.length && !noFamily" class="bar above-tabbar">
-      <view class="btn plain" @click="goShopping">备菜清单</view>
+      <view v-if="slot?.status !== 'served'" class="btn plain" @click="goShopping">备菜清单</view>
       <view v-if="slot?.status === 'open'" class="btn grow" @click="confirm">确认这餐</view>
       <block v-else-if="slot?.status === 'confirmed'">
         <view class="btn plain" @click="reopen">再改改</view>
         <view class="btn grow" @click="goServe">记下这餐</view>
       </block>
-      <view v-else class="btn grow" @click="goDiary">看饮食日记</view>
+      <block v-else>
+        <view class="btn plain" @click="goDiary">看饮食日记</view>
+        <view class="btn grow" @click="editServed">编辑记录</view>
+      </block>
     </view>
   </view>
 </template>
@@ -104,9 +108,11 @@ import { computed, ref } from 'vue'
 import { errorMessage, menuCo } from '@/api/menu'
 import DishThumb from '@/components/DishThumb.vue'
 import EmptyState from '@/components/EmptyState.vue'
+import NavHero from '@/components/NavHero.vue'
 import NoFamily from '@/components/NoFamily.vue'
 import StateView from '@/components/StateView.vue'
 import { usePageData } from '@/composables/use-page-data'
+import { useScrollTop } from '@/composables/use-scroll-top'
 import { setTabBadge, useTabBar } from '@/composables/use-tab-bar'
 import { useSessionStore } from '@/stores/session'
 import {
@@ -118,9 +124,10 @@ import {
   type Meal,
   type Slot,
 } from '@/types/models'
-import { addDays, dayStrip, formatDay, relativeDay, today } from '@/utils/date'
+import { addDays, dayStrip, formatDay, relativeDay, today, weekdayName } from '@/utils/date'
 
 useTabBar(0)
+const scrollTop = useScrollTop()
 
 const STRIP_DAYS = 7
 
@@ -133,7 +140,12 @@ const strip = ref<Slot[]>([])
 
 const days = computed(() => dayStrip(today(), STRIP_DAYS))
 const dayLabel = computed(() => formatDay(date.value))
-const title = computed(() => (date.value === today() ? '今天吃什么？' : `${relativeDay(date.value)}吃什么？`))
+/** 今天 / 明天 / 周四吃什么？；具体日期在标题上面的小字里，这里不重复 */
+const title = computed(() => {
+  if (date.value === today()) return '今天吃什么？'
+  if (date.value === addDays(today(), 1)) return '明天吃什么？'
+  return `${weekdayName(date.value)}吃什么？`
+})
 
 function dayHasDishes(d: string): boolean {
   return strip.value.some((s) => s.date === d && s.selections.some((sel) => sel.dishIds.length))
@@ -196,7 +208,7 @@ async function loadStrip(): Promise<void> {
   setTabBadge(0, count ? String(count) : '')
 }
 
-const { loading, error, noFamily, reload } = usePageData(async () => {
+const { loading, error, noFamily, refreshing, reload } = usePageData(async () => {
   await Promise.all([loadSlot(), loadStrip()])
 })
 
@@ -283,6 +295,26 @@ function goServe(): void {
   uni.navigateTo({ url: '/pages/serve/index' })
 }
 
+/** 改已开饭这一顿的记录：做了哪些菜、评分、整桌照 */
+function editServed(): void {
+  uni.navigateTo({ url: `/pages/serve/index?date=${date.value}&meal=${meal.value}` })
+}
+
+/** 删除已开饭的记录：这顿回到「已确认」，点过的菜还在 */
+async function removeServed(): Promise<void> {
+  const { confirm } = await uni.showModal({
+    title: '删除这条记录？',
+    content: '这顿会回到「已确认」，点过的菜还在，之后可以重新记；菜谱里的“吃过几次”也会退回。',
+    confirmText: '删除',
+  })
+  if (!confirm) return
+  await run(async () => {
+    await menuCo().deleteServed(date.value, meal.value)
+    await reload()
+    uni.showToast({ title: '已删除', icon: 'success' })
+  })
+}
+
 function goDiary(): void {
   uni.navigateTo({ url: '/pages/diary/index' })
 }
@@ -291,7 +323,7 @@ function goDiary(): void {
 <style lang="scss" scoped>
 .meals {
   display: inline-flex;
-  margin-top: var(--space-4);
+  margin-top: var(--space-2);
   padding: 3px;
   background: rgba(255, 255, 255, 0.18);
   border-radius: var(--radius-pill);
@@ -310,8 +342,9 @@ function goDiary(): void {
   }
 }
 
-.sheet {
-  padding-bottom: 120px;
+/* 只有底部操作条出现时才留出它的高度，空状态不留，不然页面比一屏高、能滚 */
+.sheet.has-bar {
+  padding-bottom: 88px;
 }
 
 .strip {
@@ -374,6 +407,17 @@ function goDiary(): void {
 .tags {
   display: flex;
   gap: var(--space-2);
+}
+
+.status-right {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+}
+
+.danger-link {
+  color: var(--c-danger);
+  font-size: 13px;
 }
 
 .meal-tag {

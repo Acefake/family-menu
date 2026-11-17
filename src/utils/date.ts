@@ -56,3 +56,14 @@ export function formatDay(date: string): string {
   const week = '日一二三四五六'[d.getDay()]
   return `${d.getMonth() + 1}月${d.getDate()}日 周${week}`
 }
+
+/** 周几，比如「周四」 */
+export function weekdayName(date: string): string {
+  return `周${'日一二三四五六'[new Date(`${date}T00:00:00`).getDay()]}`
+}
+
+/** 11月17日 */
+export function monthDay(date: string): string {
+  const d = new Date(`${date}T00:00:00`)
+  return `${d.getMonth() + 1}月${d.getDate()}日`
+}

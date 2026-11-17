@@ -21,6 +21,42 @@
       "description": "家里的称呼",
       "maxLength": 12
     },
+    "avatarId": {
+      "bsonType": "string",
+      "description": "自选内置头像 ID，空表示按称呼匹配",
+      "enum": [
+        "",
+        "boy",
+        "girl",
+        "boy-glasses",
+        "girl-bob",
+        "young-man",
+        "young-woman",
+        "middle-man",
+        "middle-woman",
+        "man-glasses",
+        "woman-bun",
+        "senior-man",
+        "senior-woman",
+        "baby",
+        "dad",
+        "mom",
+        "grandpa",
+        "grandma",
+        "toddler-boy",
+        "girl-clip",
+        "boy-cap",
+        "girl-braid",
+        "young-man-glasses",
+        "young-man-stripes",
+        "young-woman-pixie",
+        "young-woman-glasses",
+        "dad-stubble",
+        "mom-straight",
+        "grandpa-bald",
+        "grandma-bun"
+      ]
+    },
     "familyId": {
       "bsonType": "string",
       "description": "所属家庭 ID，空表示未加入"
@@ -28,6 +64,14 @@
     "createdAt": {
       "bsonType": "timestamp",
       "description": "注册时间"
+    },
+    "avatarImage": {
+      "bsonType": "string",
+      "description": "当前头像云存储 fileID"
+    },
+    "avatarDraft": {
+      "bsonType": "string",
+      "description": "用户自己生成的 AI 头像草稿"
     }
   }
 }

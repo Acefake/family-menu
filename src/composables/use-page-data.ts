@@ -1,4 +1,4 @@
-import { onShow } from '@dcloudio/uni-app'
+import { onPullDownRefresh, onShow } from '@dcloudio/uni-app'
 import { storeToRefs } from 'pinia'
 import { type Ref, ref } from 'vue'
 
@@ -10,6 +10,8 @@ export interface UsePageDataReturn {
   error: Ref<string>
   /** 已登录但还没加入家庭 */
   noFamily: Ref<boolean>
+  /** 正在下拉刷新（微信自带的下拉动画松手就收回，页面上用这个状态显示「正在刷新」） */
+  refreshing: Ref<boolean>
   reload: () => Promise<void>
 }
 
@@ -20,6 +22,7 @@ export function usePageData(load: () => Promise<void>): UsePageDataReturn {
   const loading = ref(true)
   const error = ref('')
   const noFamily = ref(false)
+  const refreshing = ref(false)
 
   async function reload(): Promise<void> {
     error.value = ''
@@ -36,5 +39,22 @@ export function usePageData(load: () => Promise<void>): UsePageDataReturn {
 
   onShow(reload)
 
-  return { loading, error, noFamily, reload }
+  // 只有在 pages.json 里开了 enablePullDownRefresh 的页面才会触发
+  onPullDownRefresh(async () => {
+    uni.stopPullDownRefresh()
+    if (refreshing.value) return
+    refreshing.value = true
+    try {
+      // 家庭成员、分类这些放在登录态里，一起刷新
+      await session
+        .ensureReady()
+        .then(() => session.refreshFamily())
+        .catch(() => undefined)
+      await reload()
+    } finally {
+      refreshing.value = false
+    }
+  })
+
+  return { loading, error, noFamily, refreshing, reload }
 }

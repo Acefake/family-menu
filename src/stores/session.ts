@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
-import { menuCo } from '@/api/menu'
+import { menuCo, setRelogin } from '@/api/menu'
 import type { Family, Meal } from '@/types/models'
 import { currentMeal, today } from '@/utils/date'
 
@@ -32,6 +32,12 @@ export const useSessionStore = defineStore('session', () => {
     uni.setStorageSync(UID_KEY, res.uid)
     uid.value = res.uid
   }
+
+  // 云端不认本地缓存的令牌时：清掉旧的，走一遍完整登录
+  setRelogin(async () => {
+    for (const key of [TOKEN_KEY, TOKEN_EXPIRED_KEY, UID_KEY]) uni.removeStorageSync(key)
+    await login()
+  })
 
   async function refreshFamily(): Promise<void> {
     family.value = await menuCo().getFamily()

@@ -52,8 +52,12 @@ pnpm check        # typecheck + eslint + prettier
 3. 复制 `uniCloud-alipay/cloudfunctions/common/fm-common/config.example.json` 为同目录 `config.json`，填写：
    - `weixin.appid` / `weixin.appsecret`：微信公众平台 → 开发管理 → 开发设置
    - `tokenSecret`：一串随机字符串（≥16 位）
-   - `ai.apiKey`（可选，快捷录入菜谱、AI 生成菜品图片用）：[智谱开放平台](https://bigmodel.cn) 注册后创建 API Key，`glm-4-flash`（文字）和 `cogview-3-flash`（图片）目前免费，以平台当前定价为准；可用 `ai.model` / `ai.imageModel` 换模型（免费的 `cogview-3-flash` 出图质量一般，想要更好的可换 `cogview-4-250304`，需付费，先看平台定价）
-     `config.json` 已被 gitignore，不要提交。
+   - `ai`（可选，快捷录入菜谱和 AI 生成菜品图片用，不填则这两个功能不可用）。Key 按服务商分别填在 `ai.providers` 里，填了哪家，小程序「我的」页的 AI 设置里就能选哪家；`ai.default` 指定家庭没选过时用谁：
+     - `zhipu`（[智谱开放平台](https://bigmodel.cn)）：`apiKey` 必填，默认文字模型 `glm-4-flash`，默认生图模型 `cogview-3-flash`（出图质量一般）
+     - `siliconflow`（[硅基流动](https://cloud.siliconflow.cn)）：`apiKey` 必填，默认文字模型 `Qwen/Qwen2.5-7B-Instruct`，默认生图模型 `Kwai-Kolors/Kolors`；质量更好的 `Tongyi-MAI/Z-Image-Turbo` 约 0.1 元/张，把它写进 `imageModel` 即可
+     - `model` / `imageModel` 可换模型，`baseUrl` / `imageUrl` 可换接口地址，都不写就用默认值
+     - 各模型是否免费、价格以平台的价格页为准（硅基流动见 [siliconflow.cn/pricing](https://www.siliconflow.cn/pricing)）
+   - `config.json` 已被 gitignore，不要提交。
 4. 右键 `common/fm-common` → 上传公共模块；右键 `menu-co` → 管理公共模块依赖确认包含 fm-common → 上传部署。
 5. 右键 `database` → 初始化云数据库（创建 4 张表及索引）。
 6. 在 `src/manifest.json` 的 `mp-weixin.appid` 填入小程序 AppID。

@@ -44,6 +44,10 @@ export function subCategoryName(categories: Category[], id: DishCategory, subId?
 export const MEAL_LABEL = Object.fromEntries(MEALS.map((m) => [m.value, m.label])) as Record<Meal, string>
 
 export interface Member {
+  /** 云存储头像图片；优先于内置头像。 */
+  avatarImage?: string
+  /** 内置头像 ID，未设置时按称呼匹配。 */
+  avatarId?: string
   uid: string
   nickname: string
 }
@@ -56,6 +60,22 @@ export interface Family {
   pantry: string[]
   categories: Category[]
   members: Member[]
+}
+
+/** 云端支持的一家 AI 服务商；ready 表示云端 config.json 已经填了它的 apiKey，只有 ready 的能选 */
+export interface AiOption {
+  id: string
+  label: string
+  ready: boolean
+  textModel: string
+  imageModel: string
+}
+
+/** 家庭当前用的 AI 服务商：菜谱文字和菜品图片各选一家 */
+export interface AiSettings {
+  text: string
+  image: string
+  options: AiOption[]
 }
 
 export interface Ingredient {
@@ -81,6 +101,20 @@ export interface Dish {
 
 export type DishInput = Omit<Dish, '_id' | 'familyId' | 'timesEaten' | 'lastEatenAt'> & {
   _id?: string
+}
+
+/** AI 写出或改出的一道菜：表单里能填的那几项，不含照片 */
+export type DishDraft = Pick<
+  DishInput,
+  'name' | 'category' | 'subCategory' | 'minutes' | 'tags' | 'ingredients' | 'steps'
+>
+
+/** 和 AI 对话修改菜谱时的一条消息；diff 是 AI 这次改了什么的逐条说明 */
+export interface ChatMessage {
+  id: number
+  role: 'me' | 'ai'
+  text: string
+  diff?: string[]
 }
 
 /** 某位家人在这一顿想吃的菜 */

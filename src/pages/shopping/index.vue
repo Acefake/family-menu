@@ -1,8 +1,6 @@
 <template>
   <view class="with-tabbar">
-    <view class="hero">
-      <view class="hero-date">{{ rangeLabel }}</view>
-      <view class="hero-title">备菜清单</view>
+    <NavHero title="备菜清单" :sub="rangeLabel" art="basket" :scroll="scrollTop" :refreshing="refreshing">
       <view class="ranges">
         <view
           v-for="r in RANGES"
@@ -13,9 +11,9 @@
           {{ r.label }}
         </view>
       </view>
-    </view>
+    </NavHero>
 
-    <view class="sheet">
+    <view :class="['sheet', { 'has-bar': shopping.items.length }]">
       <NoFamily v-if="noFamily" />
       <StateView v-else :loading="loading" :error="error" @retry="reload">
         <EmptyState
@@ -73,14 +71,17 @@ import { computed, ref } from 'vue'
 
 import { errorMessage, menuCo } from '@/api/menu'
 import EmptyState from '@/components/EmptyState.vue'
+import NavHero from '@/components/NavHero.vue'
 import NoFamily from '@/components/NoFamily.vue'
 import StateView from '@/components/StateView.vue'
 import { usePageData } from '@/composables/use-page-data'
+import { useScrollTop } from '@/composables/use-scroll-top'
 import { useTabBar } from '@/composables/use-tab-bar'
 import type { Shopping, ShoppingItem } from '@/types/models'
-import { addDays, relativeDay, today } from '@/utils/date'
+import { addDays, monthDay, today } from '@/utils/date'
 
 useTabBar(2)
+const scrollTop = useScrollTop()
 
 const RANGES = [
   { days: 1, label: '今天' },
@@ -96,14 +97,14 @@ const showStocked = ref(false)
 const from = computed(() => today())
 const to = computed(() => addDays(from.value, days.value - 1))
 const rangeLabel = computed(() =>
-  days.value === 1 ? '今天' : `${relativeDay(from.value)} 到 ${relativeDay(to.value)}`
+  days.value === 1 ? monthDay(from.value) : `${monthDay(from.value)} – ${monthDay(to.value)}`
 )
 const boughtCount = computed(() => shopping.value.items.filter((it) => it.bought).length)
 const percent = computed(() =>
   shopping.value.items.length ? Math.round((boughtCount.value / shopping.value.items.length) * 100) : 0
 )
 
-const { loading, error, noFamily, reload } = usePageData(async () => {
+const { loading, error, noFamily, refreshing, reload } = usePageData(async () => {
   shopping.value = await menuCo().getShopping(from.value, to.value)
 })
 
@@ -145,7 +146,7 @@ onShareAppMessage(() => ({ title: '帮忙买一下这些菜', path: '/pages/shop
 <style lang="scss" scoped>
 .ranges {
   display: inline-flex;
-  margin-top: var(--space-4);
+  margin-top: var(--space-2);
   padding: 3px;
   background: rgba(255, 255, 255, 0.18);
   border-radius: var(--radius-pill);
@@ -164,7 +165,8 @@ onShareAppMessage(() => ({ title: '帮忙买一下这些菜', path: '/pages/shop
   }
 }
 
-.sheet {
+/* 只有底部操作条出现时才留出它的高度，空状态不留，不然页面比一屏高、能滚 */
+.sheet.has-bar {
   padding-bottom: 110px;
 }
 

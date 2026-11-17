@@ -34,6 +34,20 @@
       "bsonType": "array",
       "description": "家里有的食材，买菜清单里不再提醒"
     },
+    "aiSettings": {
+      "bsonType": "object",
+      "description": "家庭选用的 AI 服务商，全家共用；没设置时用云端 config.json 的 ai.default",
+      "properties": {
+        "text": {
+          "bsonType": "string",
+          "description": "菜谱文字用哪家，如 zhipu / siliconflow"
+        },
+        "image": {
+          "bsonType": "string",
+          "description": "菜品图片用哪家"
+        }
+      }
+    },
     "categories": {
       "bsonType": "array",
       "description": "菜品分类（顺序即显示顺序），每项 { id, name }；没设置时用默认五类",

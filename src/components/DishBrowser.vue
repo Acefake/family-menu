@@ -36,7 +36,17 @@
           </view>
         </scroll-view>
 
-        <scroll-view scroll-y enhanced :show-scrollbar="false" class="list">
+        <scroll-view
+          scroll-y
+          enhanced
+          :show-scrollbar="false"
+          class="list"
+          :refresher-enabled="refreshable"
+          refresher-default-style="none"
+          :refresher-triggered="refreshing"
+          @refresherrefresh="emit('refresh')"
+          @scroll="emit('scroll', $event.detail.scrollTop)"
+        >
           <view v-if="!visible.length" class="state">没有匹配的菜</view>
           <view v-for="d in visible" :key="d._id" class="row hairline">
             <DishThumb :name="d.name" :photo="d.photo" :size="68" @click="emit('open', d._id)" />
@@ -56,7 +66,7 @@
             />
             <text v-else class="chev" @click="emit('open', d._id)">›</text>
           </view>
-          <view class="list-end" />
+          <view :style="{ height: `${endSpace}px` }" />
         </scroll-view>
       </view>
     </view>
@@ -73,19 +83,34 @@ import { type Category, categoryName, categoryTone, type Dish, subCategoryName }
 
 const ALL = 'all'
 
-const props = defineProps<{
-  dishes: Dish[]
-  categories: Category[]
-  /** 传了就是「点菜」模式：每行右边是加号 / 对勾；不传就是「浏览」模式：点一行进详情 */
-  picked?: Set<string>
-  /** 每行下面的补充说明，比如「爸爸也想吃」 */
-  hint?: (id: string) => string
-}>()
+const props = withDefaults(
+  defineProps<{
+    dishes: Dish[]
+    categories: Category[]
+    /** 传了就是「点菜」模式：每行右边是加号 / 对勾；不传就是「浏览」模式：点一行进详情 */
+    picked?: Set<string>
+    /** 每行下面的补充说明，比如「爸爸也想吃」 */
+    hint?: (id: string) => string
+    /** 列表末尾留的空白（px），用来让开页面底部盖在列表上的操作条；容器本身已让开的页面不用留 */
+    endSpace?: number
+    /**
+     * 列表能不能下拉刷新；开了的话由页面通过 refreshing 告诉列表刷新完没有。
+     * 下拉区不画任何东西：自定义下拉区的 slot 写法在小程序里不生效，刷新进度由页面头部的胶囊表示。
+     */
+    refreshable?: boolean
+    refreshing?: boolean
+  }>(),
+  { picked: undefined, hint: undefined, endSpace: 0, refreshable: false, refreshing: false }
+)
 
 const emit = defineEmits<{
   open: [id: string]
   toggle: [id: string]
   manage: []
+  /** 菜单列表滚动到的位置，页头据此展开 / 收起 */
+  scroll: [top: number]
+  /** 列表下拉到位松手了 */
+  refresh: []
 }>()
 
 const keyword = ref('')
@@ -281,9 +306,5 @@ function eatenText(d: Dish): string {
   padding: 0 var(--space-1);
   color: var(--c-line-strong);
   font-size: 20px;
-}
-
-.list-end {
-  height: 130px;
 }
 </style>

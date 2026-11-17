@@ -1,3 +1,6 @@
+/* 悬浮 tab 栏占的高度：栏高 68px + 离底距离（10px + 70% 安全区，见 custom-tab-bar）+ 12px 空隙 */
+$tabbar-space: calc(90px + env(safe-area-inset-bottom) * 0.7);
+
 /* 设计 tokens：冷灰蓝墨色 + 纸白底；菜名、标题用衬线体。风格参考食愿小灶（只借鉴配色和版式，素材自绘） */
 page {
   height: 100%;
@@ -73,6 +76,13 @@ page {
   font-size: 13px;
 }
 
+/* 蓝色页头（NavHero）下面的白色内容区；圆角底边在页头里 */
+.sheet {
+  position: relative;
+  padding: 0 var(--space-4) var(--space-4);
+  background: var(--c-surface);
+}
+
 .card {
   background: var(--c-surface);
   border-radius: var(--radius-lg);
@@ -82,37 +92,6 @@ page {
   padding: 48px 0;
   color: var(--c-text-2);
   text-align: center;
-}
-
-/* 顶部大标题区：一块带渐变的纸面，页面的主标题和切换控件叠在上面 */
-.hero {
-  position: relative;
-  padding: var(--space-5) var(--space-4) calc(var(--space-6) + 16px);
-  color: #fff;
-  /* 顶边的颜色必须和导航栏（pages.json 里的 #4a6b7f）一致，往下再变深，否则会看见一条接缝 */
-  background: linear-gradient(180deg, #4a6b7f 0%, #304d60 65%, #263f4f 100%);
-}
-
-.hero-date {
-  color: rgba(255, 255, 255, 0.78);
-  font-size: 13px;
-}
-
-.hero-title {
-  margin-top: var(--space-1);
-  font-family: var(--font-serif);
-  font-size: 24px;
-  font-weight: 700;
-}
-
-/* 抬起来盖住 hero 底部的白色面板 */
-.sheet {
-  position: relative;
-  margin-top: -16px;
-  padding: var(--space-4);
-  background: var(--c-surface);
-  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-  min-height: 60vh;
 }
 
 .tag {
@@ -256,6 +235,8 @@ page {
   right: 0;
   bottom: 0;
   left: 0;
+  /* 比页面里的原生输入框高，不然输入框的字会透出来盖在操作条上 */
+  z-index: 50;
   display: flex;
   gap: var(--space-3);
   align-items: center;
@@ -265,8 +246,18 @@ page {
 
   /* tab 页里要让出悬浮 tab 栏 */
   &.above-tabbar {
-    bottom: calc(86px + env(safe-area-inset-bottom) * 0.3);
+    bottom: $tabbar-space;
     padding-bottom: var(--space-3);
+
+    &::after {
+      content: '';
+      position: absolute;
+      top: 100%;
+      right: 0;
+      left: 0;
+      height: $tabbar-space;
+      background: var(--c-surface);
+    }
   }
 }
 
@@ -278,9 +269,55 @@ page {
   }
 }
 
+/* 设置列表行：左边名称，右边当前值和箭头 */
+.setting-row {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  min-height: 52px;
+  background: transparent;
+
+  &:active {
+    opacity: 0.7;
+  }
+}
+
+/* 名称不压缩：右边的值太长时由值自己省略，不能把名称挤成「菜品…」 */
+.setting-label {
+  flex: 1 0 auto;
+  white-space: nowrap;
+
+  &.danger {
+    color: var(--c-danger);
+  }
+}
+
+.setting-value {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--c-text-2);
+  font-size: 14px;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.setting-chev {
+  color: var(--c-line-strong);
+  font-size: 20px;
+}
+
+.setting-input {
+  flex: 1;
+  color: var(--c-text-2);
+  text-align: right;
+}
+
 /* 自定义悬浮 tab 栏不占位，tab 页根节点留出它的高度 */
 .with-tabbar {
   box-sizing: border-box;
+  /* 至少一屏高；内容少时刚好占满，不会多出一截能滚的空白 */
+  min-height: 100vh;
   background: var(--c-surface);
-  padding-bottom: calc(86px + env(safe-area-inset-bottom) * 0.3);
+  padding-bottom: $tabbar-space;
 }

@@ -5,7 +5,7 @@ import globals from 'globals'
 import tseslint from 'typescript-eslint'
 
 export default tseslint.config(
-  { ignores: ['dist/**', 'node_modules/**', 'unpackage/**', 'src/custom-tab-bar/**'] },
+  { ignores: ['dist/**', 'node_modules/**', 'unpackage/**', 'src/custom-tab-bar/**', '.mockups/**'] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   ...vue.configs['flat/recommended'],

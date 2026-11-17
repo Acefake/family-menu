@@ -1,9 +1,6 @@
 <template>
   <view class="order">
-    <view class="head">
-      <view class="head-date">{{ dayLabel }} · {{ MEAL_LABEL[meal] }}</view>
-      <view class="head-title">我想吃…</view>
-    </view>
+    <NavHero title="我想吃…" :sub="`${dayLabel} · ${MEAL_LABEL[meal]}`" art="bowl" :scroll="listTop" follow />
 
     <StateView :loading="loading" :error="error" @retry="reload">
       <DishBrowser
@@ -11,9 +8,11 @@
         :categories="categories"
         :picked="picked"
         :hint="othersHint"
+        :end-space="100"
         @toggle="toggle"
         @open="openDish"
         @manage="goCategories"
+        @scroll="listTop = $event"
       >
         <template #empty>
           <EmptyState art="bowl" title="菜谱还是空的" desc="先去菜谱里添加或导入几道菜">
@@ -39,6 +38,7 @@ import { computed, ref } from 'vue'
 import { errorMessage, menuCo } from '@/api/menu'
 import DishBrowser from '@/components/DishBrowser.vue'
 import EmptyState from '@/components/EmptyState.vue'
+import NavHero from '@/components/NavHero.vue'
 import StateView from '@/components/StateView.vue'
 import { usePageData } from '@/composables/use-page-data'
 import { useSessionStore } from '@/stores/session'
@@ -47,6 +47,8 @@ import { formatDay, relativeDay } from '@/utils/date'
 
 const { date, meal, uid, family } = storeToRefs(useSessionStore())
 const dishes = ref<Dish[]>([])
+/** 菜单列表滚动的距离，页头据此展开 / 收起 */
+const listTop = ref(0)
 const slot = ref<Slot | null>(null)
 const picked = ref(new Set<string>())
 const original = ref<string[]>([])
@@ -126,24 +128,6 @@ function goDishes(): void {
   flex-direction: column;
   height: 100%;
   background: var(--c-surface);
-}
-
-.head {
-  padding: var(--space-4);
-  color: #fff;
-  /* 顶边的颜色必须和导航栏（pages.json 里的 #4a6b7f）一致，往下再变深，否则会看见一条接缝 */
-  background: linear-gradient(180deg, #4a6b7f 0%, #304d60 65%, #263f4f 100%);
-}
-
-.head-date {
-  color: rgba(255, 255, 255, 0.78);
-  font-size: 13px;
-}
-
-.head-title {
-  font-family: var(--font-serif);
-  font-size: 22px;
-  font-weight: 700;
 }
 
 .empty-title {
