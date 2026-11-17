@@ -16,9 +16,12 @@
       <DishBrowser
         :dishes="dishes"
         :categories="categories"
+        :quick-picked="quickPicked"
+        :disabled="ordering || slot?.status === 'served'"
         :refreshable="true"
         :refreshing="refreshing"
         @open="openDish"
+        @toggle="quickOrder"
         @manage="goCategories"
         @refresh="onRefresh"
         @scroll="listTop = $event"
@@ -53,20 +56,59 @@ import StateView from '@/components/StateView.vue'
 import { usePageData } from '@/composables/use-page-data'
 import { useTabBar } from '@/composables/use-tab-bar'
 import { useSessionStore } from '@/stores/session'
-import type { Dish } from '@/types/models'
+import type { Dish, Slot } from '@/types/models'
+import { MEAL_LABEL } from '@/types/models'
+import { relativeDay } from '@/utils/date'
 
 useTabBar(1)
 const listTop = ref(0)
 
-const { family } = storeToRefs(useSessionStore())
+const { family, uid, date, meal } = storeToRefs(useSessionStore())
 const dishes = ref<Dish[]>([])
+const slot = ref<Slot | null>(null)
+const ordering = ref(false)
+const quickPicked = computed(
+  () => new Set(slot.value?.selections.find((s) => s.uid === uid.value)?.dishIds ?? [])
+)
 const importing = ref(false)
 
 const categories = computed(() => family.value?.categories ?? [])
 
 const { loading, error, noFamily, reload } = usePageData(async () => {
-  dishes.value = await menuCo().listDishes()
+  const [list, current] = await Promise.all([menuCo().listDishes(), menuCo().getSlot(date.value, meal.value)])
+  dishes.value = list
+  slot.value = current
 })
+
+/** 即时更新当前餐次自己的选择，保留已点菜和留言，失败时不改变按钮状态。 */
+async function quickOrder(id: string): Promise<void> {
+  if (ordering.value) return
+  ordering.value = true
+  const selectedDate = date.value
+  const selectedMeal = meal.value
+  try {
+    const current = await menuCo().getSlot(selectedDate, selectedMeal)
+    if (current.status === 'served') {
+      slot.value = current
+      uni.showToast({ title: '这顿已经开饭，不能再点菜', icon: 'none' })
+      return
+    }
+    const mine = current.selections.find((s) => s.uid === uid.value)
+    const ids = new Set(mine?.dishIds ?? [])
+    const removing = ids.has(id)
+    if (removing) ids.delete(id)
+    else ids.add(id)
+    slot.value = await menuCo().submitSelection(selectedDate, selectedMeal, [...ids], mine?.note ?? '')
+    uni.showToast({
+      title: removing ? '已取消这道菜' : `已点到${relativeDay(selectedDate)}${MEAL_LABEL[selectedMeal]}`,
+      icon: 'none',
+    })
+  } catch (err) {
+    uni.showToast({ title: errorMessage(err), icon: 'none' })
+  } finally {
+    ordering.value = false
+  }
+}
 
 /** 列表下拉刷新：刷新完把状态还给列表，它的下拉区才会收回去 */
 const refreshing = ref(false)

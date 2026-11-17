@@ -89,42 +89,6 @@
       "style": {
         "navigationBarTitleText": "饮食日记"
       }
-    },
-    {
-      "path": "pages/dish/detail",
-      "style": {
-        "navigationBarTitleText": "菜品"
-      }
-    },
-    {
-      "path": "pages/dish/edit",
-      "style": {
-        "navigationBarTitleText": "编辑菜品"
-      }
-    },
-    {
-      "path": "pages/feeding/index",
-      "style": {
-        "navigationStyle": "custom",
-        "navigationBarTitleText": "辅食观察",
-        "navigationBarTextStyle": "white"
-      }
-    },
-    {
-      "path": "pages/feeding/checkin",
-      "style": {
-        "navigationStyle": "custom",
-        "navigationBarTitleText": "每日打卡",
-        "navigationBarTextStyle": "black"
-      }
-    },
-    {
-      "path": "pages/feeding/archive",
-      "style": {
-        "navigationStyle": "custom",
-        "navigationBarTitleText": "食物档案",
-        "navigationBarTextStyle": "white"
-      }
     }
   ],
   "globalStyle": {
@@ -165,5 +129,53 @@
         "selectedIconPath": "static/tabbar/mine-active.png"
       }
     ]
-  }
+  },
+  "subPackages": [
+    {
+      "root": "pages/feeding",
+      "pages": [
+        {
+          "path": "index",
+          "style": {
+            "navigationStyle": "custom",
+            "navigationBarTitleText": "辅食观察",
+            "navigationBarTextStyle": "white"
+          }
+        },
+        {
+          "path": "checkin",
+          "style": {
+            "navigationStyle": "custom",
+            "navigationBarTitleText": "每日打卡",
+            "navigationBarTextStyle": "black"
+          }
+        },
+        {
+          "path": "archive",
+          "style": {
+            "navigationStyle": "custom",
+            "navigationBarTitleText": "食物档案",
+            "navigationBarTextStyle": "white"
+          }
+        }
+      ]
+    },
+    {
+      "root": "pages/dish",
+      "pages": [
+        {
+          "path": "detail",
+          "style": {
+            "navigationBarTitleText": "菜品"
+          }
+        },
+        {
+          "path": "edit",
+          "style": {
+            "navigationBarTitleText": "编辑菜品"
+          }
+        }
+      ]
+    }
+  ]
 }

@@ -134,7 +134,7 @@ import { useScrollTop } from '@/composables/use-scroll-top'
 import { useTabBar } from '@/composables/use-tab-bar'
 import { useSessionStore } from '@/stores/session'
 import { today } from '@/utils/date'
-import { observationDay } from '@/pages/feeding/model'
+import { observationDay } from '@/types/feeding'
 
 import { avatarFor } from './avatars'
 import AvatarPicker from './AvatarPicker.vue'

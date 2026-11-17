@@ -164,7 +164,7 @@ import { errorMessage, menuCo } from '@/api/menu'
 import { today } from '@/utils/date'
 import { foodIcon } from './food-icons'
 import { deleteFeedingRecord } from './record-actions'
-import { actions, exportFeeding, symptoms, type FeedingFood } from './model'
+import { actions, exportFeeding, symptoms, type FeedingFood } from '@/types/feeding'
 
 type Filter = 'safe' | 'pending' | 'confirmed'
 const tabs: { id: Filter; label: string }[] = [

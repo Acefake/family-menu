@@ -77,5 +77,5 @@ export function foodIcon(name: string): string {
       }
     }
   }
-  return `/static/feeding/${match}.svg`
+  return `/pages/feeding/static/${match}.svg`
 }

@@ -50,9 +50,9 @@
             </view>
             <view v-else class="observation-empty">
               <view class="empty-illustration">
-                <image class="empty-food side-food" src="/static/feeding/carrot.svg" mode="aspectFit" />
-                <image class="empty-food main-food" src="/static/feeding/millet.svg" mode="aspectFit" />
-                <image class="empty-food side-food" src="/static/feeding/potato.svg" mode="aspectFit" />
+                <image class="empty-food side-food" :src="foodIcon('胡萝卜')" mode="aspectFit" />
+                <image class="empty-food main-food" :src="foodIcon('小米')" mode="aspectFit" />
+                <image class="empty-food side-food" :src="foodIcon('土豆')" mode="aspectFit" />
               </view>
               <view class="empty-title">{{
                 foods.length ? '今天没有进行中的观察' : '从第一种新食物开始'
@@ -151,7 +151,7 @@ import FeedingHeader from './FeedingHeader.vue'
 import FoodArchive from './FoodArchive.vue'
 import { foodIcon } from './food-icons'
 import { deleteFeedingRecord } from './record-actions'
-import { observationDay, observedDays, type FeedingFood } from './model'
+import { observationDay, observedDays, type FeedingFood } from '@/types/feeding'
 
 const foods = ref<FeedingFood[]>([])
 const { loading, error, noFamily, reload } = usePageData(async () => {

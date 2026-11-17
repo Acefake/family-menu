@@ -1,4 +1,4 @@
-import type { FeedingFood, FeedingLog } from '@/pages/feeding/model'
+import type { FeedingFood, FeedingLog } from '@/types/feeding'
 import type {
   AiSettings,
   Category,

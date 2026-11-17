@@ -59,11 +59,15 @@
               <text v-if="hint?.(d._id)" class="muted">{{ hint(d._id) }}</text>
               <text v-else-if="!picked" class="muted">{{ eatenText(d) }}</text>
             </view>
-            <view
-              v-if="picked"
-              :class="['round-btn', { on: picked.has(d._id) }]"
-              @click="emit('toggle', d._id)"
-            />
+            <button
+              v-if="picked || quickPicked"
+              class="pick-control"
+              :disabled="disabled"
+              :aria-label="(picked ?? quickPicked)?.has(d._id) ? `取消点${d.name}` : `点${d.name}`"
+              @click.stop="emit('toggle', d._id)"
+            >
+              <view :class="['round-btn', { on: (picked ?? quickPicked)?.has(d._id) }]" />
+            </button>
             <text v-else class="chev" @click="emit('open', d._id)">›</text>
           </view>
           <view :style="{ height: `${endSpace}px` }" />
@@ -89,6 +93,10 @@ const props = withDefaults(
     categories: Category[]
     /** 传了就是「点菜」模式：每行右边是加号 / 对勾；不传就是「浏览」模式：点一行进详情 */
     picked?: Set<string>
+    /** 浏览菜谱时显示快捷点菜按钮，点击菜名仍进入详情。 */
+    quickPicked?: Set<string>
+    /** 保存中或餐次不可修改时禁用点菜按钮。 */
+    disabled?: boolean
     /** 每行下面的补充说明，比如「爸爸也想吃」 */
     hint?: (id: string) => string
     /** 列表末尾留的空白（px），用来让开页面底部盖在列表上的操作条；容器本身已让开的页面不用留 */
@@ -100,7 +108,15 @@ const props = withDefaults(
     refreshable?: boolean
     refreshing?: boolean
   }>(),
-  { picked: undefined, hint: undefined, endSpace: 0, refreshable: false, refreshing: false }
+  {
+    picked: undefined,
+    quickPicked: undefined,
+    disabled: false,
+    hint: undefined,
+    endSpace: 0,
+    refreshable: false,
+    refreshing: false,
+  }
 )
 
 const emit = defineEmits<{
@@ -270,9 +286,30 @@ function eatenText(d: Dish): string {
 }
 
 .list {
+  width: 100%;
+  box-sizing: border-box;
   flex: 1;
   min-height: 0;
   padding: 0 var(--space-4) 0 var(--space-2);
+}
+
+.pick-control {
+  display: flex;
+  flex: 0 0 44px;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  border-radius: 0;
+}
+.pick-control::after {
+  border: 0;
+}
+.pick-control[disabled] {
+  opacity: 0.45;
 }
 
 .row {

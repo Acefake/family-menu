@@ -135,7 +135,7 @@ import { usePageData } from '@/composables/use-page-data'
 import { today, weekdayName } from '@/utils/date'
 import FeedingHeader from './FeedingHeader.vue'
 import { foodIcon } from './food-icons'
-import { actions, symptoms, type FeedingFood } from './model'
+import { actions, symptoms, type FeedingFood } from '@/types/feeding'
 
 const id = ref('')
 function back(): void {

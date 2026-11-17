@@ -32,7 +32,7 @@ test('食物名称、做法与别名匹配对应图标，避免相近名称误�
     ['未知食材', 'generic'],
     ['', 'generic'],
   ])
-    assert.equal(foodIcon(name), `/static/feeding/${id}.svg`, name)
+    assert.equal(foodIcon(name), `/pages/feeding/static/${id}.svg`, name)
 })
 
 test('目录中每一种食物及兜底图标都存在，所有图标使用统一线稿尺寸与颜色', () => {
@@ -40,10 +40,10 @@ test('目录中每一种食物及兜底图标都存在，所有图标使用统�
   assert.equal(new Set(ids).size, ids.length)
   assert.equal(ids.length, 64)
   for (const id of ids) {
-    const svg = fs.readFileSync(new URL(`../../static/feeding/${id}.svg`, import.meta.url), 'utf8')
+    const svg = fs.readFileSync(new URL(`./static/${id}.svg`, import.meta.url), 'utf8')
     assert.match(svg, /viewBox="0 0 48 48"/)
     assert.match(svg, /stroke="#626d48"/)
     assert.match(svg, /stroke-width="1.55"/)
   }
-  for (const icon of foodIcons) assert.equal(foodIcon(icon.label), `/static/feeding/${icon.id}.svg`)
+  for (const icon of foodIcons) assert.equal(foodIcon(icon.label), `/pages/feeding/static/${icon.id}.svg`)
 })

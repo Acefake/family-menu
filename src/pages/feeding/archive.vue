@@ -18,7 +18,7 @@ import StateView from '@/components/StateView.vue'
 import { usePageData } from '@/composables/use-page-data'
 import FeedingHeader from './FeedingHeader.vue'
 import FoodArchive from './FoodArchive.vue'
-import type { FeedingFood } from './model'
+import type { FeedingFood } from '@/types/feeding'
 
 const foods = ref<FeedingFood[]>([])
 const { loading, error, noFamily, reload } = usePageData(async () => {
